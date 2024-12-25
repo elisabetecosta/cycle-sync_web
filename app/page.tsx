@@ -1,152 +1,28 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarIcon, InfoIcon } from 'lucide-react';
 import { Separator } from "@/components/ui/separator";
+import { useCycle } from '@/hooks/useCycle';
+import { cyclePhases, specialColors } from '@/constants/cyclePhases';
 
-interface CyclePeriod {
-  startDate: Date;
-  endDate: Date | null;
-}
-
-interface CyclePhase {
-  name: string;
-  color: string;
-  description: string;
-}
-
-const CycleTracker = () => {
-  const [periods, setPeriods] = useState<CyclePeriod[]>([]);
+const Home = () => {
+  const { periods, markPeriodStart, markPeriodEnd, deletePeriodMark, predictNextPeriod, getCurrentPhase, canMarkStart, canMarkEnd, isStartDate, isEndDate } = useCycle();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
-  useEffect(() => {
-    const savedPeriods = localStorage.getItem('periods');
-    if (savedPeriods) {
-      setPeriods(JSON.parse(savedPeriods).map((period: any) => ({
-        startDate: new Date(period.startDate),
-        endDate: period.endDate ? new Date(period.endDate) : null
-      })));
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('periods', JSON.stringify(periods));
-  }, [periods]);
-
-  const cyclePhases: CyclePhase[] = [
-    {
-      name: 'Menstruation',
-      color: 'bg-red-500',
-      description: 'Period phase (typically days 1-5)'
-    },
-    {
-      name: 'Follicular',
-      color: 'bg-green-500',
-      description: 'Pre-ovulation phase (typically days 6-14)'
-    },
-    {
-      name: 'Ovulation',
-      color: 'bg-blue-500',
-      description: 'Fertile window (typically days 14-17)'
-    },
-    {
-      name: 'Luteal',
-      color: 'bg-purple-500',
-      description: 'Post-ovulation phase (typically days 18-28)'
-    }
-  ];
-
-  const markPeriodStart = (date: Date) => {
-    setPeriods([...periods, { startDate: date, endDate: null }]);
-  };
-
-  const markPeriodEnd = (date: Date) => {
-    const updatedPeriods = [...periods];
-    const currentPeriod = updatedPeriods.find(
-      p => p.startDate <= date && (!p.endDate || p.endDate >= date)
-    );
-
-    if (currentPeriod && date >= currentPeriod.startDate) {
-      currentPeriod.endDate = date;
-      setPeriods(updatedPeriods);
-    }
-  };
-
-  const deletePeriodMark = (date: Date) => {
-    const updatedPeriods = periods.filter(period => {
-      const isStart = period.startDate.toDateString() === date.toDateString();
-      const isEnd = period.endDate?.toDateString() === date.toDateString();
-
-      if (isStart) {
-        return false; // Remove the entire period if it's the start date
-      } else if (isEnd) {
-        period.endDate = null; // Remove just the end date
-        return true;
-      }
-      return true;
-    });
-    setPeriods(updatedPeriods);
-  };
-
-  const calculateAverageCycleLength = () => {
-    if (periods.length < 2) return null;
-
-    let totalDays = 0;
-    for (let i = 1; i < periods.length; i++) {
-      const daysDiff = Math.floor(
-        (periods[i].startDate.getTime() - periods[i - 1].startDate.getTime()) /
-        (1000 * 60 * 60 * 24)
-      );
-      totalDays += daysDiff;
-    }
-    return Math.round(totalDays / (periods.length - 1));
-  };
-
-  const predictNextPeriod = () => {
-    if (periods.length === 0) return null;
-
-    const avgCycleLength = calculateAverageCycleLength() || 28;
-    const lastPeriod = periods[periods.length - 1];
-    const nextDate = new Date(lastPeriod.startDate);
-    nextDate.setDate(nextDate.getDate() + avgCycleLength);
-    return nextDate;
-  };
-
-  const getCurrentPhase = () => {
-    if (periods.length === 0) return null;
-
-    const today = new Date();
-    const lastPeriod = periods[periods.length - 1];
-    const avgCycleLength = calculateAverageCycleLength() || 28;
-
-    // Check if currently on period
-    if (lastPeriod.endDate && today >= lastPeriod.startDate && today <= lastPeriod.endDate) {
-      return cyclePhases[0]; // Menstruation phase
-    }
-
-    const daysSinceStart = Math.floor(
-      (today.getTime() - lastPeriod.startDate.getTime()) /
-      (1000 * 60 * 60 * 24)
-    );
-
-    if (daysSinceStart <= 5) return cyclePhases[0]; // Menstruation
-    if (daysSinceStart <= 14) return cyclePhases[1]; // Follicular
-    if (daysSinceStart <= 17) return cyclePhases[2]; // Ovulation
-    if (daysSinceStart <= avgCycleLength) return cyclePhases[3]; // Luteal
-
-    return null;
-  };
-
+  const currentPhase = getCurrentPhase();
+  
+  // Mark Period on calendar
   const getDayColor = (date: Date) => {
     // Check if date is within any logged period
     const isPeriod = periods.some(period =>
       period.startDate <= date && (period.endDate ? date <= period.endDate : false)
     );
-    if (isPeriod) return 'bg-red-500 text-white';
+    if (isPeriod) return `${cyclePhases[0].color}`;
 
     // Check if it's a start or end date
     const isStartDate = periods.some(period =>
@@ -155,7 +31,7 @@ const CycleTracker = () => {
     const isEndDate = periods.some(period =>
       period.endDate?.toDateString() === date.toDateString()
     );
-    if (isStartDate || isEndDate) return 'bg-red-500 text-white';
+    if (isStartDate || isEndDate) return `${cyclePhases[0].color}`;
 
     // Predicted next period
     const nextPeriod = predictNextPeriod();
@@ -163,38 +39,12 @@ const CycleTracker = () => {
       const predictedEnd = new Date(nextPeriod);
       predictedEnd.setDate(predictedEnd.getDate() + 5);
       if (date >= nextPeriod && date <= predictedEnd) {
-        return 'bg-red-100';
+        return `${specialColors.predicted}`;
       }
     }
 
     return '';
   };
-
-  const isStartDate = (date: Date) => {
-    return periods.some(period =>
-      period.startDate.toDateString() === date.toDateString()
-    );
-  };
-
-  const isEndDate = (date: Date) => {
-    return periods.some(period =>
-      period.endDate?.toDateString() === date.toDateString()
-    );
-  };
-
-  const canMarkStart = (date: Date) => {
-    return !periods.some(period =>
-      (period.startDate <= date && (period.endDate ? date <= period.endDate : true))
-    );
-  };
-
-  const canMarkEnd = (date: Date) => {
-    return periods.some(period =>
-      period.startDate <= date && !period.endDate
-    );
-  };
-
-  const currentPhase = getCurrentPhase();
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -223,7 +73,6 @@ const CycleTracker = () => {
                 }}
               />
             </div>
-
             <Separator className="w-full" />
 
             {/* Cycle Phases */}
@@ -235,7 +84,7 @@ const CycleTracker = () => {
                 </div>
               ))}
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-200" />
+                <div className={`w-3 h-3 rounded-full ${specialColors.predicted}`} />
                 <span className="text-sm">Predicted Period</span>
               </div>
             </div>
@@ -251,37 +100,36 @@ const CycleTracker = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* BUG: Button disappears sometimes, make sure button always stays and only even tries to change if a different day is selected, selecting the same day should not make the button disappear */}
             {selectedDate && (
-                <div className="flex flex-col gap-2">
-                  {canMarkStart(selectedDate) && (
-                    <Button
-                      size="sm"
-                      onClick={() => markPeriodStart(selectedDate)}
-                      className="bg-red-500 hover:bg-red-600"
-                    >
-                      Mark Period Start
-                    </Button>
-                  )}
-                  {canMarkEnd(selectedDate) && (
-                    <Button
-                      size="sm"
-                      onClick={() => markPeriodEnd(selectedDate)}
-                      className="bg-red-500 hover:bg-red-600"
-                    >
-                      Mark Period End
-                    </Button>
-                  )}
-                  {(isStartDate(selectedDate) || isEndDate(selectedDate)) && (
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => deletePeriodMark(selectedDate)}
-                    >
-                      Delete Mark
-                    </Button>
-                  )}
-                </div>
+              <div className="flex flex-col gap-2">
+                {canMarkStart(selectedDate) && (
+                  <Button
+                    size="sm"
+                    onClick={() => markPeriodStart(selectedDate)}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    Mark Period Start
+                  </Button>
+                )}
+                {canMarkEnd(selectedDate) && (
+                  <Button
+                    size="sm"
+                    onClick={() => markPeriodEnd(selectedDate)}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    Mark Period End
+                  </Button>
+                )}
+                {(isStartDate(selectedDate) || isEndDate(selectedDate)) && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => deletePeriodMark(selectedDate)}
+                  >
+                    Delete Mark
+                  </Button>
+                )}
+              </div>
             )}
 
             <div>
@@ -301,4 +149,4 @@ const CycleTracker = () => {
   );
 };
 
-export default CycleTracker;
+export default Home;
