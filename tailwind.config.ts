@@ -7,6 +7,9 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+	{ pattern: /^bg-(red|blue|lime|purple)-\d{3}$/ },
+  ],  
   theme: {
   	extend: {
   		colors: {
