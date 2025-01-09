@@ -3,7 +3,6 @@ import { Period, CyclePhase } from '@/types';
 import { calculateCyclePhases, predictNextPeriod } from '@/utils/cycleCalculations';
 
 export function useCycleTracker() {
-
   const [periods, setPeriods] = useState<Period[]>([]);
   const [markingPeriod, setMarkingPeriod] = useState<'start' | 'end' | null>(null);
   const [tempPeriod, setTempPeriod] = useState<Period | null>(null);
@@ -37,6 +36,10 @@ export function useCycleTracker() {
       setMarkingPeriod(null);
     }
   };
+
+  const cyclePhases = useMemo(() => {
+    return calculateCyclePhases(periods);
+  }, [periods]);
 
   const removePeriod = (date: Date) => {
     setPeriods(periods.filter(period =>
