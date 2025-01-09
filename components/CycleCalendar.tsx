@@ -29,29 +29,60 @@ export function CycleCalendar({
   selectedDate,
   removePeriod,
 }: CycleCalendarProps) {
+  
   const getDateColor = (date: Date) => {
-
+    // Normalize the input date to midnight (00:00:00)
+    // This ensures consistent date comparisons regardless of the time component
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+  
+    // Check existing periods
     for (const period of periods) {
-      if (period.start && period.end && isWithinInterval(date, { start: period.start, end: period.end })) {
-        return CYCLE_PHASES[0].color; // Menstrual phase color
+      // Normalize the start date of each period
+      // This is necessary because dates from different sources (API, user input, etc.)
+      // might have different time components
+      const normalizedStart = new Date(period.start);
+      normalizedStart.setHours(0, 0, 0, 0);
+      
+      // If there's an end date, normalize it too
+      // Note: end date can be null for in-progress period marking
+      const normalizedEnd = period.end ? new Date(period.end) : null;
+      if (normalizedEnd) {
+        normalizedEnd.setHours(0, 0, 0, 0);
+      }
+  
+      // Check if the date matches either:
+      // 1. Exactly matches the start date (using date-fns isSameDay)
+      // 2. Falls within the period interval (if there's an end date)
+      if (
+        isSameDay(normalizedDate, normalizedStart) || 
+        (normalizedEnd && isWithinInterval(normalizedDate, { 
+          start: normalizedStart, 
+          end: normalizedEnd 
+        }))
+      ) {
+        return CYCLE_PHASES[0].color;
       }
     }
-
-    if (tempPeriod && tempPeriod.start && isSameDay(date, tempPeriod.start)) {
-      return CYCLE_PHASES[0].color; // Menstrual phase color
+  
+    // Check temporary period marking (normalize comparison)
+    if (tempPeriod && tempPeriod.start && isSameDay(normalizedDate, tempPeriod.start)) {
+      return CYCLE_PHASES[0].color;
     }
-
+  
+    // Check cycle phases
     for (const phase of cyclePhases) {
-      if (isWithinInterval(date, { start: phase.start, end: phase.end })) {
+      if (isWithinInterval(normalizedDate, { start: phase.start, end: phase.end })) {
         const cyclePhase = CYCLE_PHASES.find(p => p.name === phase.name);
         return cyclePhase ? cyclePhase.color : '';
       }
     }
-
-    if (nextPeriod && isWithinInterval(date, { start: nextPeriod.start, end: nextPeriod.end })) {
+  
+    // Check predicted next period
+    if (nextPeriod && isWithinInterval(normalizedDate, { start: nextPeriod.start, end: nextPeriod.end })) {
       return PREDICTED_PERIOD.color;
     }
-
+  
     return '';
   };
 
@@ -104,7 +135,7 @@ export function CycleCalendar({
             if (periods.some(period =>
               period.start <= selectedDate && (!period.end || period.end >= selectedDate)
             )) {
-              return 'Remove Mark';
+              return 'Remove Period';
             }
             if (markingPeriod === 'end') {
               return 'Mark Period End';
