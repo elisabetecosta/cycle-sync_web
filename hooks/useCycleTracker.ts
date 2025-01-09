@@ -37,10 +37,6 @@ export function useCycleTracker() {
     }
   };
 
-  const cyclePhases = useMemo(() => {
-    return calculateCyclePhases(periods);
-  }, [periods]);
-
   const removePeriod = (date: Date) => {
     setPeriods(periods.filter(period =>
       !(period.start <= date && (!period.end || period.end >= date))
