@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Period, CyclePhase } from '@/types';
 import { calculateCyclePhases, predictNextPeriod } from '@/utils/cycleCalculations';
 
@@ -17,6 +18,8 @@ export function useCycleTracker() {
     normalizedDate.setHours(0, 0, 0, 0);
     
     if (markingPeriod === null) {
+      const newTempPeriod = { start: normalizedDate, end: null };
+      setTempPeriod(newTempPeriod);
       const newTempPeriod = { start: normalizedDate, end: null };
       setTempPeriod(newTempPeriod);
       setMarkingPeriod('end');
@@ -38,7 +41,12 @@ export function useCycleTracker() {
     }
   };
 
+  const cyclePhases = useMemo(() => {
+    return calculateCyclePhases(periods);
+  }, [periods]);
+
   const removePeriod = (date: Date) => {
+    setPeriods(periods.filter(period =>
     setPeriods(periods.filter(period =>
       !(period.start <= date && (!period.end || period.end >= date))
     ));
@@ -55,6 +63,7 @@ export function useCycleTracker() {
     markingPeriod,
     tempPeriod,
     cyclePhases,
+    nextPeriod: predictNextPeriod(periods),
     nextPeriod: predictNextPeriod(periods),
     handleMarkPeriod,
     removePeriod,
