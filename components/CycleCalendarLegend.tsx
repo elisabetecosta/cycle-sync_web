@@ -16,7 +16,7 @@ function LegendItem({ color, name }: LegendItemProps) {
 
 export function CycleCalendarLegend() {
   return (
-    <div className="mt-4 flex flex-wrap gap-4">
+    <div className="flex flex-wrap gap-4">
       {CYCLE_PHASES.map((phase) => (
         <LegendItem key={phase.name} color={phase.color} name={phase.name} />
       ))}

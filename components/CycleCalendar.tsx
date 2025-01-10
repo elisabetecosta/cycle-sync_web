@@ -61,13 +61,13 @@ export function CycleCalendar({
           end: normalizedEnd 
         }))
       ) {
-        return CYCLE_PHASES[0].color;
+        return `${CYCLE_PHASES[0].color} text-white font-semibold`;
       }
     }
   
     // Check temporary period marking (normalize comparison)
     if (tempPeriod && tempPeriod.start && isSameDay(normalizedDate, tempPeriod.start)) {
-      return CYCLE_PHASES[0].color;
+      return `${CYCLE_PHASES[0].color} text-white font-semibold`;
     }
   
     // Check cycle phases
@@ -88,10 +88,7 @@ export function CycleCalendar({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle></CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center">
+      <CardContent className="flex flex-col items-center pt-3">
         <CalendarUI
           mode="single"
           selected={selectedDate}
@@ -114,7 +111,7 @@ export function CycleCalendar({
           }}
         />
         {/* Calendar Legend */}
-        <div className="w-full flex justify-center items-center border-t border-b py-2 my-4">
+        <div className="w-fit flex justify-center items-center border-t border-b p-4 my-4">
           <CycleCalendarLegend />
         </div>
         <Button
@@ -129,7 +126,7 @@ export function CycleCalendar({
               onMarkPeriod();
             }
           }}
-          className="mt-4 bg-red-500 hover:bg-red-600"
+          className="mt-4bg-red-500 hover:bg-red-600"
         >
           {(() => {
             if (periods.some(period =>
