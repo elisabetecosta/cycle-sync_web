@@ -15,7 +15,7 @@ export function calculateCyclePhases(periods: Period[]): CyclePhase[] {
   const completePeriods = periods.filter(period => period.start && period.end) as { start: Date; end: Date }[];
   if (completePeriods.length === 0) return [];
 
-  const lastPeriod = completePeriods[completePeriods.length - 1];
+  const lastPeriod = completePeriods[0]; // Use the first period (most recent) after sorting
   const cycleLength = 28; // Assuming a 28-day cycle
 
   const menstrualPhase: CyclePhase = {
@@ -49,7 +49,7 @@ export function predictNextPeriod(periods: Period[]): Period | null {
   const completePeriods = periods.filter(period => period.start && period.end) as { start: Date; end: Date }[];
   if (completePeriods.length < 1) return null;
 
-  const lastPeriod = completePeriods[completePeriods.length - 1];
+  const lastPeriod = completePeriods[0]; // Use the first period (most recent) after sorting
   const averageCycleLength = 28; // Assuming a 28-day cycle
 
   const predictedStart = addDays(lastPeriod.start, averageCycleLength);
@@ -57,3 +57,4 @@ export function predictNextPeriod(periods: Period[]): Period | null {
 
   return { start: predictedStart, end: predictedEnd };
 }
+
