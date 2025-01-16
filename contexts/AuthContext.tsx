@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
@@ -59,4 +61,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
