@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { CalendarIcon, UtensilsCrossed, LogOut } from 'lucide-react';
+import { CalendarIcon, UtensilsCrossed, LogOut, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -14,6 +14,7 @@ export function Navbar() {
     const navItems = [
         { href: '/meal-planner', icon: UtensilsCrossed, label: 'Meal Planner' },
         { href: '/', icon: CalendarIcon, label: 'Cycle Calendar' },
+        { href: '/recipes', icon: BookOpen, label: 'Recipes' },
     ];
 
     const handleLogout = async () => {
