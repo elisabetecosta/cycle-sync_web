@@ -1,19 +1,26 @@
-import { useState, useEffect, useCallback } from "react"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { startOfWeek, addDays } from "date-fns"
-import type { Meal, Recipe, MealType, CustomMealForm } from "@/types"
-import { useAuth } from "@/contexts/AuthContext"
+// External Libraries
+import { addDays, startOfWeek } from "date-fns"
+import { useCallback, useEffect, useState } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+
+// Next.js Components
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
+
+// Utilities and Hooks
+import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
-import { MEAL_TYPES, DAYS_OF_WEEK } from "@/constants/meals"
+import { supabase } from "@/lib/supabase"
+
+// Types/Interfaces
+import type { CustomMealForm, Meal, MealType, Recipe } from "@/types"
+
 
 export const useMealPlanner = () => {
   const { user } = useAuth()
   const router = useRouter()
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date()))
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [selectedCell, setSelectedCell] = useState<{ type: MealType; day: string } | null>(null)
   const [customMealForm, setCustomMealForm] = useState<CustomMealForm>({
     title: "",
@@ -26,12 +33,14 @@ export const useMealPlanner = () => {
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
+  // Fetch recipes for the current user
   const fetchRecipes = async (userId: string): Promise<Recipe[]> => {
     const { data, error } = await supabase.from("recipes").select("*").eq("user_id", userId)
     if (error) throw error
     return data
   }
 
+  // Fetch meals for the current week
   const fetchMeals = async (userId: string, startDate: Date, endDate: Date): Promise<Meal[]> => {
     const { data, error } = await supabase
       .from("meals")
@@ -43,12 +52,14 @@ export const useMealPlanner = () => {
     return data
   }
 
+  // Query for recipes
   const { data: recipes = [], refetch: refetchRecipes } = useQuery<Recipe[]>({
     queryKey: ["recipes", user?.id],
     queryFn: () => fetchRecipes(user!.id),
     enabled: !!user,
   })
 
+  // Query for meals
   const { data: meals = [], isLoading: mealsLoading } = useQuery<Meal[]>({
     queryKey: ["meals", user?.id, currentWeekStart.toISOString()],
     queryFn: () => fetchMeals(user!.id, currentWeekStart, addDays(currentWeekStart, 6)),
@@ -56,6 +67,7 @@ export const useMealPlanner = () => {
     select: (data) => data.sort((a, b) => new Date(a.day).getTime() - new Date(b.day).getTime()),
   })
 
+  // Mutation for adding a new meal
   const addMealMutation = useMutation({
     mutationFn: async (newMeal: Omit<Meal, "id">) => {
       const { data, error } = await supabase.from("meals").insert([newMeal]).select().single()
@@ -73,6 +85,7 @@ export const useMealPlanner = () => {
     },
   })
 
+  // Mutation for updating an existing meal
   const updateMealMutation = useMutation({
     mutationFn: async (updatedMeal: Meal) => {
       const { data, error } = await supabase
@@ -95,6 +108,7 @@ export const useMealPlanner = () => {
     },
   })
 
+  // Mutation for removing a meal
   const removeMealMutation = useMutation({
     mutationFn: async (mealId: string) => {
       const { error } = await supabase.from("meals").delete().eq("id", mealId)
@@ -112,10 +126,12 @@ export const useMealPlanner = () => {
     },
   })
 
+  // Get meal for a specific cell in the meal planner
   const getMealForCell = useCallback((meals: Meal[], type: MealType, day: string) => {
     return meals.find((meal) => meal.type === type && meal.day === day)
   }, [])
 
+  // Update the selected meal when the selected cell changes
   const updateSelectedMeal = useCallback(() => {
     if (selectedCell) {
       const meal = getMealForCell(meals, selectedCell.type, selectedCell.day)
@@ -131,6 +147,7 @@ export const useMealPlanner = () => {
     updateSelectedMeal()
   }, [updateSelectedMeal])
 
+  // Handle adding a custom meal
   const handleAddCustomMeal = useCallback(async () => {
     if (
       selectedCell &&
@@ -182,6 +199,7 @@ export const useMealPlanner = () => {
     }
   }, [selectedCell, customMealForm, user, addMealMutation, setIsDialogOpen, toast])
 
+  // Handle selecting an existing recipe for a meal
   const handleSelectRecipe = useCallback(
     async (recipe: Recipe) => {
       if (selectedCell && user) {
@@ -206,6 +224,7 @@ export const useMealPlanner = () => {
     [selectedCell, user, meals, getMealForCell, updateMealMutation, addMealMutation, setIsDialogOpen],
   )
 
+  // Handle removing a meal
   const handleRemoveMeal = useCallback(
     async (mealId: string) => {
       await removeMealMutation.mutateAsync(mealId)
@@ -213,10 +232,12 @@ export const useMealPlanner = () => {
     [removeMealMutation],
   )
 
+  // Handle changes to the custom meal form
   const handleCustomMealFormChange = (field: keyof CustomMealForm, value: string | string[]) => {
     setCustomMealForm((prev) => ({ ...prev, [field]: value }))
   }
 
+  // Toggle a tag in the custom meal form
   const toggleTag = (tag: string) => {
     setCustomMealForm((prev) => ({
       ...prev,
@@ -224,10 +245,12 @@ export const useMealPlanner = () => {
     }))
   }
 
+  // Navigate to the recipe details page
   const handleGoToRecipe = (recipeId: string) => {
     router.push(`/recipes/${recipeId}`)
   }
 
+  // Switch to edit mode for changing a meal
   const handleChangeMeal = () => {
     setDialogMode("edit")
   }
@@ -256,4 +279,3 @@ export const useMealPlanner = () => {
     handleChangeMeal,
   }
 }
-

@@ -1,8 +1,9 @@
-"use client"
-
-import React, { useCallback } from "react"
+// External Libraries
 import { format, addDays } from "date-fns"
 import { Plus } from "lucide-react"
+import React, { useCallback, useMemo } from "react"
+
+// Custom Components
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,13 +13,18 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog"
-import { useCycleTracker } from "@/hooks/useCycleTracker"
-import { CYCLE_PHASES } from "@/constants/cyclePhases"
-import { useMealPlanner } from "@/hooks/useMealPlanner"
-import { MEAL_TYPES, DAYS_OF_WEEK } from "@/constants/meals"
-import { MealSummary } from "./MealSummary"
 import { MealEditContent } from "./MealEditContent"
+import { MealSummary } from "./MealSummary"
 
+// Utilities and Hooks
+import { useCycleTracker } from "@/hooks/useCycleTracker"
+import { useMealPlanner } from "@/hooks/useMealPlanner"
+
+// Assets and Constants
+import { CYCLE_PHASES } from "@/constants/cyclePhases"
+import { DAYS_OF_WEEK, MEAL_TYPES } from "@/constants/meals"
+
+// Memoized Dialog component to prevent unnecessary re-renders
 const MemoizedDialog = React.memo(
   ({
     isOpen,
@@ -40,6 +46,7 @@ export function MealPlanner() {
     setSelectedCell,
     customMealForm,
     dialogMode,
+    setDialogMode,
     selectedMeal,
     recipes,
     meals,
@@ -56,6 +63,7 @@ export function MealPlanner() {
     handleChangeMeal,
   } = useMealPlanner()
 
+  // Function to determine the color of a cell based on the cycle phase
   const getPhaseColor = useCallback(
     (date: Date) => {
       for (const phase of cyclePhases) {
@@ -68,28 +76,38 @@ export function MealPlanner() {
     [cyclePhases],
   )
 
-  const weekDates = DAYS_OF_WEEK.map((_, index) => addDays(currentWeekStart, index))
+  // Calculate the dates for the current week
+  const weekDates = useMemo(() => {
+    return DAYS_OF_WEEK.map((_, index) => addDays(currentWeekStart, index))
+  }, [currentWeekStart])
 
   return (
     <div className="container mx-auto p-4 max-w-[95vw] xl:max-w-[1200px]">
+      {/* Week navigation buttons */}
       <div className="flex justify-between mb-4">
         <Button onClick={() => setCurrentWeekStart(addDays(currentWeekStart, -7))}>Previous Week</Button>
         <Button onClick={() => setCurrentWeekStart(addDays(currentWeekStart, 7))}>Next Week</Button>
       </div>
+      {/* Meal planner grid */}
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
         <div className="grid grid-cols-8 gap-2 p-4 overflow-x-auto">
+          {/* Empty cell for top-left corner */}
           <div className="font-medium text-muted-foreground relative"></div>
+          {/* Day headers */}
           {DAYS_OF_WEEK.map((day, index) => (
             <div key={day} className={`text-center font-medium ${getPhaseColor(weekDates[index])} rounded-md p-2`}>
               <div className="text-xs sm:text-sm truncate">{day}</div>
               <div className="text-xs text-muted-foreground">{format(weekDates[index], "MMM d")}</div>
             </div>
           ))}
+          {/* Meal type rows */}
           {MEAL_TYPES.map(({ type, label }) => (
             <React.Fragment key={type}>
+              {/* Meal type label */}
               <div className="font-medium text-muted-foreground self-center text-xs sm:text-sm break-words hyphens-auto">
                 {label}
               </div>
+              {/* Meal cells for each day */}
               {DAYS_OF_WEEK.map((day, index) => {
                 const date = format(weekDates[index], "yyyy-MM-dd")
                 const meal = getMealForCell(meals, type, date)
@@ -98,6 +116,7 @@ export function MealPlanner() {
                     key={`${type}-${date}`}
                     className={`aspect-[4/3] border rounded-md p-2 flex items-center justify-center relative group ${getPhaseColor(weekDates[index])}`}
                   >
+                    {/* Meal dialog */}
                     <MemoizedDialog
                       isOpen={isDialogOpen && selectedCell?.type === type && selectedCell?.day === date}
                       onOpenChange={(open) => {
@@ -107,6 +126,7 @@ export function MealPlanner() {
                         }
                       }}
                     >
+                      {/* Dialog trigger button */}
                       <DialogTrigger asChild>
                         <Button
                           variant="ghost"
@@ -121,6 +141,7 @@ export function MealPlanner() {
                           </span>
                         </Button>
                       </DialogTrigger>
+                      {/* Dialog content */}
                       <DialogContent aria-describedby="meal-dialog-description">
                         <DialogHeader>
                           <DialogTitle>
@@ -166,6 +187,7 @@ export function MealPlanner() {
           ))}
         </div>
       </div>
+      {/* Loading overlay */}
       {mealsLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-white"></div>
@@ -174,4 +196,3 @@ export function MealPlanner() {
     </div>
   )
 }
-
