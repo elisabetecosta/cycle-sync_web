@@ -12,35 +12,29 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
 export default function Home() {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const {
-    periods,
-    markingPeriod,
-    tempPeriod,
-    cyclePhases,
-    nextPeriod,
-    handleMarkPeriod,
-    removePeriod,
-  } = useCycleTracker();
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const { periods, markingPeriod, tempPeriod, cyclePhases, nextPeriod, handleMarkPeriod, removePeriod } =
+    useCycleTracker()
 
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth()
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     // This effect will run after the component mounts and the user state is determined
-    setIsLoading(false);
-  }, [user]);
+    setIsLoading(false)
+  }, [user])
 
   const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-  };
+    setSelectedDate(date)
+  }
 
   const onMarkPeriod = (date: Date | null) => {
-    handleMarkPeriod(date);
-  };
+    handleMarkPeriod(date)
+  }
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>
   }
 
   if (!user) {
@@ -59,7 +53,7 @@ export default function Home() {
           </div>
         </div>
       </main>
-    );
+    )
   }
 
   if (!user.email_confirmed_at) {
@@ -73,7 +67,7 @@ export default function Home() {
           </Alert>
         </div>
       </main>
-    );
+    )
   }
 
   return (
@@ -94,6 +88,8 @@ export default function Home() {
             onMarkPeriod={onMarkPeriod}
             selectedDate={selectedDate}
             removePeriod={removePeriod}
+            errorMessage={errorMessage}
+            setErrorMessage={setErrorMessage}
           />
           <CycleInfo
             className="w-full"
@@ -105,5 +101,5 @@ export default function Home() {
         </div>
       </div>
     </main>
-  );
+  )
 }
