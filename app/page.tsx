@@ -1,36 +1,60 @@
 "use client"
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { CalendarIcon } from 'lucide-react';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { CycleCalendar } from '@/components/cycle/CycleCalendar';
-import { CycleInfo } from '@/components/cycle/CycleInfo';
-import { useCycleTracker } from '@/hooks/useCycleTracker';
-import { useAuth } from '@/contexts/AuthContext';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useRef } from "react"
+import { CalendarIcon } from "lucide-react"
+import { PageHeader } from "@/components/ui/PageHeader"
+import { CycleCalendar } from "@/components/cycle/CycleCalendar"
+import { CycleInfo } from "@/components/cycle/CycleInfo"
+import { useCycleTracker } from "@/hooks/useCycleTracker"
+import { useAuth } from "@/contexts/AuthContext"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const { periods, markingPeriod, tempPeriod, cyclePhases, nextPeriod, handleMarkPeriod, removePeriod } =
-    useCycleTracker()
+  const {
+    periods,
+    markingPeriod,
+    tempPeriod,
+    cyclePhases,
+    predictedPeriod,
+    handleMarkPeriod,
+    removePeriod,
+    getPhaseForDate,
+    updateCycleData,
+    errorMessage,
+    setErrorMessage,
+    showOldPeriodPrompt,
+    handleOldPeriodPromptResponse,
+    oldPeriodToCheck,
+    checkForOldPeriods,
+    isResolvingOldPeriod,
+  } = useCycleTracker()
 
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const initialCheckDone = useRef(false)
 
   useEffect(() => {
     // This effect will run after the component mounts and the user state is determined
     setIsLoading(false)
   }, [user])
 
+  // Check for old periods only when the component mounts
+  useEffect(() => {
+    if (periods.length > 0 && !isResolvingOldPeriod && !initialCheckDone.current) {
+      checkForOldPeriods()
+      initialCheckDone.current = true
+    }
+  }, [periods, checkForOldPeriods, isResolvingOldPeriod])
+
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date)
   }
 
   const onMarkPeriod = (date: Date | null) => {
-    handleMarkPeriod(date)
+    if (date) handleMarkPeriod(date)
   }
 
   if (isLoading) {
@@ -82,19 +106,25 @@ export default function Home() {
             periods={periods}
             tempPeriod={tempPeriod}
             cyclePhases={cyclePhases}
-            nextPeriod={nextPeriod}
-            markingPeriod={markingPeriod}
+            predictedPeriod={predictedPeriod}
             onDateSelect={handleDateSelect}
             onMarkPeriod={onMarkPeriod}
             selectedDate={selectedDate}
             removePeriod={removePeriod}
             errorMessage={errorMessage}
             setErrorMessage={setErrorMessage}
+            getPhaseForDate={getPhaseForDate}
+            updateCycleData={updateCycleData}
+            markingPeriod={markingPeriod}
+            showOldPeriodPrompt={showOldPeriodPrompt}
+            handleOldPeriodPromptResponse={handleOldPeriodPromptResponse}
+            oldPeriodToCheck={oldPeriodToCheck}
+            isResolvingOldPeriod={isResolvingOldPeriod}
           />
           <CycleInfo
             className="w-full"
             cyclePhases={cyclePhases}
-            nextPeriod={nextPeriod}
+            predictedPeriod={predictedPeriod}
             selectedDate={selectedDate || new Date()}
             periods={periods}
           />

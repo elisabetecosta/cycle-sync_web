@@ -1,63 +1,77 @@
-import { InfoIcon, Utensils, Dumbbell, Brain, Weight, Clock, Frown, Battery, ThermometerIcon } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CyclePhase, Period, PredictedPeriod } from '@/types';
-import { CYCLE_PHASES, PREDICTED_PERIOD } from '@/constants/cyclePhases';
-import { isWithinInterval } from 'date-fns';
+import { InfoIcon, Utensils, Dumbbell, Brain, Weight, Clock, Frown, Battery, ThermometerIcon } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { Badge } from "../ui/badge"
+import type { CyclePhase, Period, PredictedPeriod } from "../../types"
+import { CYCLE_PHASES, PREDICTED_PERIOD } from "../../constants/cyclePhases"
+import { isWithinInterval, isSameDay } from "date-fns"
+import { shouldAutoMarkPeriod, getEffectiveEndDate } from "@/utils/cycleCalculations"
 
 interface CycleInfoProps {
-  cyclePhases: CyclePhase[];
-  nextPeriod: Period | null;
-  selectedDate: Date;
-  periods: Period[];
-  className?: string;
+  cyclePhases: CyclePhase[]
+  predictedPeriod: Period | null
+  selectedDate: Date
+  periods: Period[]
+  className?: string
 }
 
-export function CycleInfo({ cyclePhases, nextPeriod, selectedDate, periods, className }: CycleInfoProps) {
+export function CycleInfo({ cyclePhases, predictedPeriod, selectedDate, periods, className }: CycleInfoProps) {
   const getActivePhase = (): CyclePhase | PredictedPeriod | null => {
     // Check if the selected date is within a marked period (menstruation)
-    const activePeriod = periods.find(period =>
-      period.start && period.end &&
-      isWithinInterval(selectedDate, { start: period.start, end: period.end })
-    );
+    const activePeriod = periods.find((period) => {
+      if (period.start && period.end) {
+        // For completed periods
+        return isWithinInterval(selectedDate, { start: period.start, end: period.end })
+      } else if (period.start) {
+        // For ongoing periods
+        if (shouldAutoMarkPeriod(period)) {
+          // For recent periods (within 3 days), mark all days up to today or max 14 days
+          const effectiveEnd = getEffectiveEndDate(period)
+          return isWithinInterval(selectedDate, { start: period.start, end: effectiveEnd })
+        } else {
+          // For older periods, only mark the start date
+          return isSameDay(selectedDate, period.start)
+        }
+      }
+      return false
+    })
 
     if (activePeriod) {
-      return CYCLE_PHASES.find(p => p.name === 'Menstruation') || null;
+      return CYCLE_PHASES.find((p) => p.name === "Menstruation") || null
     }
 
     // Check other phases
     for (const phase of cyclePhases) {
       if (isWithinInterval(selectedDate, { start: phase.start, end: phase.end })) {
-        return CYCLE_PHASES.find(p => p.name === phase.name) || null;
+        return CYCLE_PHASES.find((p) => p.name === phase.name) || null
       }
     }
 
     // Check for predicted period
-    if (nextPeriod && isWithinInterval(selectedDate, { start: nextPeriod.start, end: nextPeriod.end })) {
-      return PREDICTED_PERIOD;
+    if (predictedPeriod && isWithinInterval(selectedDate, { start: predictedPeriod.start, end: predictedPeriod.end })) {
+      return PREDICTED_PERIOD
     }
 
-    return null;
-  };
+    return null
+  }
 
-  const activePhase = getActivePhase();
+  const activePhase = getActivePhase()
 
   const getIconForTip = (tipType: string) => {
     switch (tipType) {
-      case 'diet':
-        return <Utensils className="flex-shrink-0" size={30} />;
-      case 'exercise':
-        return <Dumbbell className="flex-shrink-0" size={30} />;
-      case 'mentalHealth':
-        return <Brain className="flex-shrink-0" size={30} />;
-      case 'weightLoss':
-        return <Weight className="flex-shrink-0" size={30} />;
-      case 'fasting':
-        return <Clock className="flex-shrink-0" size={30} />;
+      case "diet":
+        return <Utensils className="flex-shrink-0" size={30} />
+      case "exercise":
+        return <Dumbbell className="flex-shrink-0" size={30} />
+      case "mentalHealth":
+        return <Brain className="flex-shrink-0" size={30} />
+      case "weightLoss":
+        return <Weight className="flex-shrink-0" size={30} />
+      case "fasting":
+        return <Clock className="flex-shrink-0" size={30} />
       default:
-        return null;
+        return null
     }
-  };
+  }
 
   return (
     <Card className={className}>
@@ -81,14 +95,14 @@ export function CycleInfo({ cyclePhases, nextPeriod, selectedDate, periods, clas
                     <div key={index} className="flex flex-col items-center text-center">
                       {(() => {
                         switch (symptom.toLowerCase()) {
-                          case 'cramping':
-                            return <Frown size={24} />;
-                          case 'fatigue':
-                            return <Battery size={24} />;
-                          case 'lower back pain':
-                            return <ThermometerIcon size={24} />;
+                          case "cramping":
+                            return <Frown size={24} />
+                          case "fatigue":
+                            return <Battery size={24} />
+                          case "lower back pain":
+                            return <ThermometerIcon size={24} />
                           default:
-                            return <InfoIcon size={24} />;
+                            return <InfoIcon size={24} />
                         }
                       })()}
                       <span className="mt-2 text-sm">{symptom}</span>
@@ -104,14 +118,14 @@ export function CycleInfo({ cyclePhases, nextPeriod, selectedDate, periods, clas
                 <div className="space-y-4">
                   {Object.entries(activePhase.tips).map(([key, tips]) => (
                     <div key={key} className="flex bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center justify-center w-10 mr-3">
-                        {getIconForTip(key)}
-                      </div>
+                      <div className="flex items-center justify-center w-10 mr-3">{getIconForTip(key)}</div>
                       <div className="flex-1">
                         <h4 className="font-medium capitalize">{key}:</h4>
                         <ul className="list-disc list-inside space-y-1 ml-4">
                           {tips.map((tip, index) => (
-                            <li key={index} className="pl-1 text-sm">{tip}</li>
+                            <li key={index} className="pl-1 text-sm">
+                              {tip}
+                            </li>
                           ))}
                         </ul>
                       </div>
@@ -126,6 +140,5 @@ export function CycleInfo({ cyclePhases, nextPeriod, selectedDate, periods, clas
         )}
       </CardContent>
     </Card>
-  );
+  )
 }
-
