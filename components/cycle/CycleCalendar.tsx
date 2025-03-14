@@ -57,7 +57,12 @@ export function CycleCalendar({
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Check for actual marked periods first
+    // Check if a day is selected - this takes priority over all other styles
+    if (selectedDate && isSameDay(date, selectedDate)) {
+      return `bg-black text-white font-semibold`
+    }
+
+    // Check for actual marked periods
     const isMarkedPeriod = periods.some((period) => {
       if (period.start && period.end) {
         // For completed periods, check if date is within the period
