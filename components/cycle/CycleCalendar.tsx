@@ -1,22 +1,22 @@
 "use client"
 
-import { useEffect } from "react"
-import { Calendar as CalendarUI } from "@/components/ui/calendar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { addDays, isSameDay, isWithinInterval, subDays, isAfter, isBefore, format } from "date-fns"
-import type { Period, CyclePhase } from "@/types/index"
-import { CycleCalendarLegend } from "./CycleCalendarLegend"
-import { CYCLE_PHASES, PREDICTED_PERIOD } from "@/constants/cyclePhases"
 import { Alert, AlertTitle } from "@/components/ui/alert"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { shouldAutoMarkPeriod, getEffectiveEndDate } from "@/utils/cycleCalculations"
+import { Button } from "@/components/ui/button"
+import { Calendar as CalendarUI } from "@/components/ui/calendar"
+import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { CYCLE_PHASES, PREDICTED_PERIOD } from "@/constants/cyclePhases"
+import type { CyclePhase, Period } from "@/types/index"
+import { isRecentPeriod } from "@/utils/cycleCalculations"
+import { addDays, format, isAfter, isBefore, isSameDay, isWithinInterval, subDays } from "date-fns"
+import { useEffect } from "react"
+import { CycleCalendarLegend } from "./CycleCalendarLegend"
 
 interface CycleCalendarProps {
   periods: Period[]
   tempPeriod: Period | null
   cyclePhases: CyclePhase[]
-  predictedPeriod: Period | null
+  predictedPeriods: Period[]
   markingPeriod: "start" | "end" | null
   onDateSelect: (date: Date) => void
   onMarkPeriod: (date: Date) => void
@@ -37,15 +37,13 @@ export function CycleCalendar({
   periods,
   tempPeriod,
   cyclePhases,
-  predictedPeriod,
+  predictedPeriods,
   markingPeriod,
   onDateSelect,
   onMarkPeriod,
   selectedDate,
-  removePeriod,
   errorMessage,
   setErrorMessage,
-  getPhaseForDate,
   className,
   updateCycleData,
   showOldPeriodPrompt = false,
@@ -57,53 +55,77 @@ export function CycleCalendar({
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Check if a day is selected - this takes priority over all other styles
+    // Check if this is the selected date - this takes priority over all other styles
     if (selectedDate && isSameDay(date, selectedDate)) {
       return `bg-black text-white font-semibold`
     }
 
-    // Check for actual marked periods
-    const isMarkedPeriod = periods.some((period) => {
-      if (period.start && period.end) {
-        // For completed periods, check if date is within the period
-        return isWithinInterval(date, { start: period.start, end: period.end })
-      } else if (period.start) {
-        // For ongoing periods
-        if (shouldAutoMarkPeriod(period)) {
-          // For recent periods (within 3 days), mark all days up to today or max 14 days
-          const effectiveEnd = getEffectiveEndDate(period)
-          return isWithinInterval(date, { start: period.start, end: effectiveEnd })
+    // First, check for completed periods (with start and end dates)
+    for (const period of periods) {
+      if (period.start && period.end && isWithinInterval(date, { start: period.start, end: period.end })) {
+        return `${CYCLE_PHASES[0].color} text-white font-semibold`
+      }
+    }
+
+    // Next, check for ongoing periods (with start but no end date)
+    for (const period of periods) {
+      if (period.start && !period.end) {
+        // For recent periods (within 3 days), show all days up to today
+        if (isRecentPeriod(period)) {
+          if (!isAfter(date, today) && isWithinInterval(date, { start: period.start, end: today })) {
+            return `${CYCLE_PHASES[0].color} text-white font-semibold`
+          }
+
+          // For future days within the predicted period duration
+          if (isAfter(date, today)) {
+            const averagePeriodLength = 5 // Default value
+            const predictedEnd = addDays(period.start, averagePeriodLength - 1)
+
+            if (isWithinInterval(date, { start: addDays(today, 1), end: predictedEnd })) {
+              return PREDICTED_PERIOD.color
+            }
+          }
         } else {
-          // For older periods, only mark the start date
-          return isSameDay(date, period.start)
+          // For older periods, ONLY mark the start date with period color
+          if (isSameDay(date, period.start)) {
+            return `${CYCLE_PHASES[0].color} text-white font-semibold`
+          }
+
+          // For older periods, still show predicted period color for future days
+          const averagePeriodLength = 5 // Default value
+          const predictedEnd = addDays(period.start, averagePeriodLength - 1)
+
+          if (isWithinInterval(date, { start: addDays(period.start, 1), end: predictedEnd })) {
+            return PREDICTED_PERIOD.color
+          }
         }
       }
-      return false
-    })
-
-    if (isMarkedPeriod) {
-      return `${CYCLE_PHASES[0].color} text-white font-semibold`
     }
 
-    // Safely call getPhaseForDate with a fallback
-    try {
-      const phase = getPhaseForDate(date)
-      switch (phase) {
-        case "Predicted Period":
-          return PREDICTED_PERIOD.color
-        case "Follicular":
-          return CYCLE_PHASES[1].color
-        case "Ovulation":
-          return CYCLE_PHASES[2].color
-        case "Luteal":
-          return CYCLE_PHASES[3].color
-        default:
-          return ""
+    // Check for predicted periods
+    for (const period of predictedPeriods) {
+      if (period.start && period.end && isWithinInterval(date, { start: period.start, end: period.end })) {
+        return PREDICTED_PERIOD.color
       }
-    } catch (error) {
-      console.error("Error getting phase for date:", error)
-      return ""
     }
+
+    // Finally, check for cycle phases
+    for (const phase of cyclePhases) {
+      if (phase.start && phase.end && isWithinInterval(date, { start: phase.start, end: phase.end })) {
+        switch (phase.name) {
+          case "Follicular":
+            return CYCLE_PHASES[1].color
+          case "Ovulation":
+            return CYCLE_PHASES[2].color
+          case "Luteal":
+            return CYCLE_PHASES[3].color
+          default:
+            return ""
+        }
+      }
+    }
+
+    return ""
   }
 
   const handleButtonClick = () => {
@@ -206,7 +228,9 @@ export function CycleCalendar({
   }
 
   useEffect(() => {
-    updateCycleData(periods)
+    if (periods && updateCycleData) {
+      updateCycleData(periods)
+    }
   }, [periods, updateCycleData])
 
   return (

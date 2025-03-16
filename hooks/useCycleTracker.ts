@@ -1,25 +1,20 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import type { Period, CyclePhase } from "@/types"
-import {
-  calculateCyclePhases,
-  predictNextPeriod,
-  adjustPredictedPeriod,
-  getPhaseForDate,
-} from "@/utils/cycleCalculations"
 import { useAuth } from "@/contexts/AuthContext"
 import { supabase } from "@/lib/supabase"
+import type { CyclePhase, Period } from "@/types"
+import { calculateCyclePhases, getPhaseForDate, predictFuturePeriods } from "@/utils/cycleCalculations"
 import {
-  compareDesc,
-  isSameDay,
   addDays,
-  subDays,
-  isWithinInterval,
+  compareDesc,
+  differenceInDays,
   isAfter,
   isBefore,
-  differenceInDays,
+  isSameDay,
+  isWithinInterval,
+  subDays,
 } from "date-fns"
+import { useCallback, useEffect, useState } from "react"
 
 export function useCycleTracker() {
   const [periods, setPeriods] = useState<Period[]>([])
@@ -27,7 +22,7 @@ export function useCycleTracker() {
   const [markingPeriod, setMarkingPeriod] = useState<"start" | "end" | null>(null)
   const [tempPeriod, setTempPeriod] = useState<Period | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [predictedPeriod, setPredictedPeriod] = useState<Period | null>(null)
+  const [predictedPeriods, setPredictedPeriods] = useState<Period[]>([])
   const [showOldPeriodPrompt, setShowOldPeriodPrompt] = useState<boolean>(false)
   const [oldPeriodToCheck, setOldPeriodToCheck] = useState<Period | null>(null)
   const [isResolvingOldPeriod, setIsResolvingOldPeriod] = useState<boolean>(false)
@@ -98,21 +93,15 @@ export function useCycleTracker() {
 
   const updateCycleData = useCallback((updatedPeriods: Period[]) => {
     const sortedPeriods = [...updatedPeriods].sort((a, b) => compareDesc(a.start, b.start))
-    const ongoingPeriod = sortedPeriods.find((p) => p.end === null)
 
-    let newPredictedPeriod = predictNextPeriod(sortedPeriods)
+    // Predict the next 6 periods
+    const newPredictedPeriods = predictFuturePeriods(sortedPeriods, 6)
 
-    if (ongoingPeriod) {
-      // If there's an ongoing period, adjust the predicted period
-      if (newPredictedPeriod && isBefore(ongoingPeriod.start, newPredictedPeriod.start)) {
-        newPredictedPeriod = adjustPredictedPeriod(newPredictedPeriod, ongoingPeriod.start)
-      }
-    }
-
-    const newCyclePhases = calculateCyclePhases(sortedPeriods, newPredictedPeriod)
+    // Calculate cycle phases based on the most recent period and predicted periods
+    const newCyclePhases = calculateCyclePhases(sortedPeriods, newPredictedPeriods)
 
     setCyclePhases(newCyclePhases)
-    setPredictedPeriod(newPredictedPeriod)
+    setPredictedPeriods(newPredictedPeriods)
   }, [])
 
   const savePeriod = async (period: Period) => {
@@ -343,9 +332,9 @@ export function useCycleTracker() {
   const getPhaseForDateWrapper = useCallback(
     (date: Date) => {
       // Make sure we're calling the imported function with all required parameters
-      return getPhaseForDate(date, cyclePhases, periods, predictedPeriod)
+      return getPhaseForDate(date, cyclePhases, periods, predictedPeriods)
     },
-    [cyclePhases, periods, predictedPeriod],
+    [cyclePhases, periods, predictedPeriods],
   )
 
   useEffect(() => {
@@ -359,7 +348,7 @@ export function useCycleTracker() {
     errorMessage,
     setErrorMessage,
     cyclePhases,
-    predictedPeriod,
+    predictedPeriods,
     handleMarkPeriod,
     removePeriod,
     getPhaseForDate: getPhaseForDateWrapper,

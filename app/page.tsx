@@ -1,15 +1,15 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { CalendarIcon } from "lucide-react"
-import { PageHeader } from "@/components/ui/PageHeader"
 import { CycleCalendar } from "@/components/cycle/CycleCalendar"
 import { CycleInfo } from "@/components/cycle/CycleInfo"
-import { useCycleTracker } from "@/hooks/useCycleTracker"
-import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/ui/PageHeader"
+import { useAuth } from "@/contexts/AuthContext"
+import { useCycleTracker } from "@/hooks/useCycleTracker"
+import { CalendarIcon } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useRef, useState } from "react"
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
@@ -18,7 +18,7 @@ export default function Home() {
     markingPeriod,
     tempPeriod,
     cyclePhases,
-    predictedPeriod,
+    predictedPeriods,
     handleMarkPeriod,
     removePeriod,
     getPhaseForDate,
@@ -106,7 +106,7 @@ export default function Home() {
             periods={periods}
             tempPeriod={tempPeriod}
             cyclePhases={cyclePhases}
-            predictedPeriod={predictedPeriod}
+            predictedPeriods={predictedPeriods}
             onDateSelect={handleDateSelect}
             onMarkPeriod={onMarkPeriod}
             selectedDate={selectedDate}
@@ -124,7 +124,7 @@ export default function Home() {
           <CycleInfo
             className="w-full"
             cyclePhases={cyclePhases}
-            predictedPeriod={predictedPeriod}
+            predictedPeriods={predictedPeriods}
             selectedDate={selectedDate || new Date()}
             periods={periods}
           />
