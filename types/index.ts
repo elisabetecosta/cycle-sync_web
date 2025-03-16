@@ -1,6 +1,8 @@
 export interface Period {
     start: Date
     end: Date | null
+    id?: string
+    isPredicted?: boolean
 }
 
 export interface CycleTips {
@@ -28,16 +30,16 @@ export interface PredictedPeriod {
 
 export type MealType = "breakfast" | "morningSnack" | "lunch" | "afternoonSnack" | "dinner" | "lateNightSnack"
 
-export interface Meal {
+export interface MealPlan {
     id?: string
     content: string
     type: MealType
     day: string
-    recipe_id?: string
+    meal_id?: string
     user_id: string
 }
 
-export interface Recipe {
+export interface Meal {
     id: string
     title: string
     tags: string[]

@@ -1,3 +1,5 @@
+"use client"
+
 // External Libraries
 import { addDays, startOfWeek } from "date-fns"
 import { useCallback, useEffect, useState } from "react"
@@ -6,14 +8,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 // Next.js Components
 import { useRouter } from "next/navigation"
 
+// Custom Components
+// (none in this file)
+
 // Utilities and Hooks
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
 
 // Types/Interfaces
-import type { CustomMealForm, Meal, MealType, Recipe } from "@/types"
+import type { CustomMealForm, Meal, MealPlan, MealType } from "@/types"
 
+// Assets and Constants
+// (none in this file)
 
 export const useMealPlanner = () => {
   const { user } = useAuth()
@@ -30,20 +37,20 @@ export const useMealPlanner = () => {
     image: "",
   })
   const [dialogMode, setDialogMode] = useState<"view" | "edit">("view")
-  const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null)
+  const [selectedMealPlan, setSelectedMealPlan] = useState<MealPlan | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-  // Fetch recipes for the current user
-  const fetchRecipes = async (userId: string): Promise<Recipe[]> => {
-    const { data, error } = await supabase.from("recipes").select("*").eq("user_id", userId)
+  // Fetch meals for the current user
+  const fetchMeals = async (userId: string): Promise<Meal[]> => {
+    const { data, error } = await supabase.from("meals").select("*").eq("user_id", userId)
     if (error) throw error
     return data
   }
 
-  // Fetch meals for the current week
-  const fetchMeals = async (userId: string, startDate: Date, endDate: Date): Promise<Meal[]> => {
+  // Fetch meal plans for the current week
+  const fetchMealPlans = async (userId: string, startDate: Date, endDate: Date): Promise<MealPlan[]> => {
     const { data, error } = await supabase
-      .from("meals")
+      .from("meal_plans")
       .select("*")
       .eq("user_id", userId)
       .gte("day", startDate.toISOString())
@@ -52,100 +59,100 @@ export const useMealPlanner = () => {
     return data
   }
 
-  // Query for recipes
-  const { data: recipes = [], refetch: refetchRecipes } = useQuery<Recipe[]>({
-    queryKey: ["recipes", user?.id],
-    queryFn: () => fetchRecipes(user!.id),
+  // Query for meals
+  const { data: meals = [], refetch: refetchMeals } = useQuery<Meal[]>({
+    queryKey: ["meals", user?.id],
+    queryFn: () => fetchMeals(user!.id),
     enabled: !!user,
   })
 
-  // Query for meals
-  const { data: meals = [], isLoading: mealsLoading } = useQuery<Meal[]>({
-    queryKey: ["meals", user?.id, currentWeekStart.toISOString()],
-    queryFn: () => fetchMeals(user!.id, currentWeekStart, addDays(currentWeekStart, 6)),
+  // Query for meal plans
+  const { data: mealPlans = [], isLoading: mealPlansLoading } = useQuery<MealPlan[]>({
+    queryKey: ["meal_plans", user?.id, currentWeekStart.toISOString()],
+    queryFn: () => fetchMealPlans(user!.id, currentWeekStart, addDays(currentWeekStart, 6)),
     enabled: !!user,
     select: (data) => data.sort((a, b) => new Date(a.day).getTime() - new Date(b.day).getTime()),
   })
 
-  // Mutation for adding a new meal
-  const addMealMutation = useMutation({
-    mutationFn: async (newMeal: Omit<Meal, "id">) => {
-      const { data, error } = await supabase.from("meals").insert([newMeal]).select().single()
+  // Mutation for adding a new meal plan
+  const addMealPlanMutation = useMutation({
+    mutationFn: async (newMealPlan: Omit<MealPlan, "id">) => {
+      const { data, error } = await supabase.from("meal_plans").insert([newMealPlan]).select().single()
       if (error) {
-        toast({ variant: "destructive", title: "Error", description: "Failed to add meal" })
+        toast({ variant: "destructive", title: "Error", description: "Failed to add meal plan" })
         throw error
       }
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["meals", user?.id, currentWeekStart.toISOString()])
+      queryClient.invalidateQueries(["meal_plans", user?.id, currentWeekStart.toISOString()])
       setSelectedCell(null)
       setDialogMode("view")
-      toast({ title: "Success", description: "Meal added successfully" })
+      toast({ title: "Success", description: "Meal plan added successfully" })
     },
   })
 
-  // Mutation for updating an existing meal
-  const updateMealMutation = useMutation({
-    mutationFn: async (updatedMeal: Meal) => {
+  // Mutation for updating an existing meal plan
+  const updateMealPlanMutation = useMutation({
+    mutationFn: async (updatedMealPlan: MealPlan) => {
       const { data, error } = await supabase
-        .from("meals")
-        .update(updatedMeal)
-        .eq("id", updatedMeal.id)
+        .from("meal_plans")
+        .update(updatedMealPlan)
+        .eq("id", updatedMealPlan.id)
         .select()
         .single()
       if (error) {
-        toast({ variant: "destructive", title: "Error", description: "Failed to update meal" })
+        toast({ variant: "destructive", title: "Error", description: "Failed to update meal plan" })
         throw error
       }
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["meals", user?.id, currentWeekStart.toISOString()])
+      queryClient.invalidateQueries(["meal_plans", user?.id, currentWeekStart.toISOString()])
       setSelectedCell(null)
       setDialogMode("view")
-      toast({ title: "Success", description: "Meal updated successfully" })
+      toast({ title: "Success", description: "Meal plan updated successfully" })
     },
   })
 
-  // Mutation for removing a meal
-  const removeMealMutation = useMutation({
-    mutationFn: async (mealId: string) => {
-      const { error } = await supabase.from("meals").delete().eq("id", mealId)
+  // Mutation for removing a meal plan
+  const removeMealPlanMutation = useMutation({
+    mutationFn: async (mealPlanId: string) => {
+      const { error } = await supabase.from("meal_plans").delete().eq("id", mealPlanId)
       if (error) {
-        toast({ variant: "destructive", title: "Error", description: "Failed to remove meal" })
+        toast({ variant: "destructive", title: "Error", description: "Failed to remove meal plan" })
         throw error
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["meals", user?.id, currentWeekStart.toISOString()])
+      queryClient.invalidateQueries(["meal_plans", user?.id, currentWeekStart.toISOString()])
       setSelectedCell(null)
       setDialogMode("view")
       setIsDialogOpen(false)
-      toast({ title: "Success", description: "Meal removed successfully" })
+      toast({ title: "Success", description: "Meal plan removed successfully" })
     },
   })
 
-  // Get meal for a specific cell in the meal planner
-  const getMealForCell = useCallback((meals: Meal[], type: MealType, day: string) => {
-    return meals.find((meal) => meal.type === type && meal.day === day)
+  // Get meal plan for a specific cell in the meal planner
+  const getMealPlanForCell = useCallback((mealPlans: MealPlan[], type: MealType, day: string) => {
+    return mealPlans.find((mealPlan) => mealPlan.type === type && mealPlan.day === day)
   }, [])
 
-  // Update the selected meal when the selected cell changes
-  const updateSelectedMeal = useCallback(() => {
+  // Update the selected meal plan when the selected cell changes
+  const updateSelectedMealPlan = useCallback(() => {
     if (selectedCell) {
-      const meal = getMealForCell(meals, selectedCell.type, selectedCell.day)
-      setSelectedMeal(meal || null)
-      setDialogMode(meal ? "view" : "edit")
+      const mealPlan = getMealPlanForCell(mealPlans, selectedCell.type, selectedCell.day)
+      setSelectedMealPlan(mealPlan || null)
+      setDialogMode(mealPlan ? "view" : "edit")
     } else {
-      setSelectedMeal(null)
+      setSelectedMealPlan(null)
       setDialogMode("view")
     }
-  }, [selectedCell, meals, getMealForCell])
+  }, [selectedCell, mealPlans, getMealPlanForCell])
 
   useEffect(() => {
-    updateSelectedMeal()
-  }, [updateSelectedMeal])
+    updateSelectedMealPlan()
+  }, [updateSelectedMealPlan])
 
   // Handle adding a custom meal
   const handleAddCustomMeal = useCallback(async () => {
@@ -157,7 +164,7 @@ export const useMealPlanner = () => {
       user
     ) {
       try {
-        const newRecipe: Omit<Recipe, "id"> = {
+        const newMeal: Omit<Meal, "id"> = {
           title: customMealForm.title.trim(),
           tags: customMealForm.tags,
           ingredients: customMealForm.ingredients.split("\n").map((ingredient) => ingredient.trim()),
@@ -166,24 +173,24 @@ export const useMealPlanner = () => {
           user_id: user.id,
         }
 
-        const { data: recipeData, error: recipeError } = await supabase.from("recipes").insert([newRecipe]).select()
-        if (recipeError) {
-          toast({ variant: "destructive", title: "Error", description: "Failed to create recipe" })
-          throw recipeError
+        const { data: mealData, error: mealError } = await supabase.from("meals").insert([newMeal]).select()
+        if (mealError) {
+          toast({ variant: "destructive", title: "Error", description: "Failed to create meal" })
+          throw mealError
         }
-        if (!recipeData || recipeData.length === 0) throw new Error("No recipe data returned")
+        if (!mealData || mealData.length === 0) throw new Error("No meal data returned")
 
-        const newRecipeId = recipeData[0].id
+        const newMealId = mealData[0].id
 
-        const newMeal: Omit<Meal, "id"> = {
+        const newMealPlan: Omit<MealPlan, "id"> = {
           content: customMealForm.title.trim(),
           type: selectedCell.type,
           day: selectedCell.day,
-          recipe_id: newRecipeId,
+          meal_id: newMealId,
           user_id: user.id,
         }
 
-        await addMealMutation.mutateAsync(newMeal)
+        await addMealPlanMutation.mutateAsync(newMealPlan)
 
         setCustomMealForm({
           title: "",
@@ -197,39 +204,39 @@ export const useMealPlanner = () => {
         console.error("Error in handleAddCustomMeal:", error)
       }
     }
-  }, [selectedCell, customMealForm, user, addMealMutation, setIsDialogOpen, toast])
+  }, [selectedCell, customMealForm, user, addMealPlanMutation, setIsDialogOpen, toast])
 
-  // Handle selecting an existing recipe for a meal
-  const handleSelectRecipe = useCallback(
-    async (recipe: Recipe) => {
+  // Handle selecting an existing meal for a meal plan
+  const handleSelectMeal = useCallback(
+    async (meal: Meal) => {
       if (selectedCell && user) {
-        const existingMeal = getMealForCell(meals, selectedCell.type, selectedCell.day)
+        const existingMealPlan = getMealPlanForCell(mealPlans, selectedCell.type, selectedCell.day)
 
-        const newMeal: Omit<Meal, "id"> = {
-          content: recipe.title,
+        const newMealPlan: Omit<MealPlan, "id"> = {
+          content: meal.title,
           type: selectedCell.type,
           day: selectedCell.day,
-          recipe_id: recipe.id,
+          meal_id: meal.id,
           user_id: user.id,
         }
 
-        if (existingMeal) {
-          await updateMealMutation.mutateAsync({ ...newMeal, id: existingMeal.id })
+        if (existingMealPlan) {
+          await updateMealPlanMutation.mutateAsync({ ...newMealPlan, id: existingMealPlan.id })
         } else {
-          await addMealMutation.mutateAsync(newMeal)
+          await addMealPlanMutation.mutateAsync(newMealPlan)
         }
         setIsDialogOpen(false)
       }
     },
-    [selectedCell, user, meals, getMealForCell, updateMealMutation, addMealMutation, setIsDialogOpen],
+    [selectedCell, user, mealPlans, getMealPlanForCell, updateMealPlanMutation, addMealPlanMutation, setIsDialogOpen],
   )
 
-  // Handle removing a meal
-  const handleRemoveMeal = useCallback(
-    async (mealId: string) => {
-      await removeMealMutation.mutateAsync(mealId)
+  // Handle removing a meal plan
+  const handleRemoveMealPlan = useCallback(
+    async (mealPlanId: string) => {
+      await removeMealPlanMutation.mutateAsync(mealPlanId)
     },
-    [removeMealMutation],
+    [removeMealPlanMutation],
   )
 
   // Handle changes to the custom meal form
@@ -245,13 +252,13 @@ export const useMealPlanner = () => {
     }))
   }
 
-  // Navigate to the recipe details page
-  const handleGoToRecipe = (recipeId: string) => {
-    router.push(`/recipes/${recipeId}`)
+  // Navigate to the meal details page
+  const handleGoToMeal = (mealId: string) => {
+    router.push(`/meals/${mealId}`)
   }
 
-  // Switch to edit mode for changing a meal
-  const handleChangeMeal = () => {
+  // Switch to edit mode for changing a meal plan
+  const handleChangeMealPlan = () => {
     setDialogMode("edit")
   }
 
@@ -263,19 +270,19 @@ export const useMealPlanner = () => {
     customMealForm,
     dialogMode,
     setDialogMode,
-    selectedMeal,
-    recipes,
+    selectedMealPlan,
     meals,
-    mealsLoading,
+    mealPlans,
+    mealPlansLoading,
     handleAddCustomMeal,
-    handleSelectRecipe,
-    handleRemoveMeal,
+    handleSelectMeal,
+    handleRemoveMealPlan,
     handleCustomMealFormChange,
     toggleTag,
-    getMealForCell,
-    handleGoToRecipe,
+    getMealPlanForCell,
+    handleGoToMeal,
     isDialogOpen,
     setIsDialogOpen,
-    handleChangeMeal,
+    handleChangeMealPlan,
   }
 }

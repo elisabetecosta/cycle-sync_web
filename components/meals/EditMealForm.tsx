@@ -1,3 +1,7 @@
+"use client"
+
+import type React from "react"
+
 import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
@@ -8,40 +12,36 @@ import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
 import { AVAILABLE_TAGS } from "@/constants/meals"
-import type { Recipe, Tag } from "@/types"
+import type { Meal, Tag } from "@/types"
 
-//type Tag = "vegan" | "vegetarian" | "carnivore" | "gluten-free" | "dairy-free" | "keto" | "paleo"
-
-//const AVAILABLE_TAGS: Tag[] = ["vegan", "vegetarian", "carnivore", "gluten-free", "dairy-free", "keto", "paleo"]
-
-interface EditRecipeFormProps {
-  recipe: Recipe
+interface EditMealFormProps {
+  meal: Meal
   onSuccess: () => void
 }
 
-export function EditRecipeForm({ recipe, onSuccess }: EditRecipeFormProps) {
-  const [title, setTitle] = useState(recipe.title)
-  const [image, setImage] = useState(recipe.image || "")
-  const [selectedTags, setSelectedTags] = useState<Tag[]>(recipe.tags as Tag[])
-  const [ingredients, setIngredients] = useState<string[]>(recipe.ingredients)
-  const [preparation, setPreparation] = useState(recipe.preparation)
+export function EditMealForm({ meal, onSuccess }: EditMealFormProps) {
+  const [title, setTitle] = useState(meal.title)
+  const [image, setImage] = useState(meal.image || "")
+  const [selectedTags, setSelectedTags] = useState<Tag[]>(meal.tags as Tag[])
+  const [ingredients, setIngredients] = useState<string[]>(meal.ingredients)
+  const [preparation, setPreparation] = useState(meal.preparation)
 
   const { toast } = useToast()
 
   const queryClient = useQueryClient()
 
-  const editRecipeMutation = useMutation({
-    mutationFn: async (updatedRecipe: Partial<Recipe>) => {
-      const { data, error } = await supabase.from("recipes").update(updatedRecipe).eq("id", recipe.id).select()
+  const editMealMutation = useMutation({
+    mutationFn: async (updatedMeal: Partial<Meal>) => {
+      const { data, error } = await supabase.from("meals").update(updatedMeal).eq("id", meal.id).select()
       if (error) throw error
       return data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["recipes"])
-      queryClient.invalidateQueries(["recipe", recipe.id])
+      queryClient.invalidateQueries(["meals"])
+      queryClient.invalidateQueries(["meal", meal.id])
       toast({
         title: "Success",
-        description: "Recipe updated successfully",
+        description: "Meal updated successfully",
       })
       onSuccess()
     },
@@ -49,7 +49,7 @@ export function EditRecipeForm({ recipe, onSuccess }: EditRecipeFormProps) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: `Error updating recipe: ${error instanceof Error ? error.message : "Unknown error"}`,
+        description: `Error updating meal: ${error instanceof Error ? error.message : "Unknown error"}`,
       })
     },
   })
@@ -60,14 +60,14 @@ export function EditRecipeForm({ recipe, onSuccess }: EditRecipeFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const updatedRecipe = {
+    const updatedMeal = {
       title,
       image,
       tags: selectedTags,
       ingredients,
       preparation,
     }
-    editRecipeMutation.mutate(updatedRecipe)
+    editMealMutation.mutate(updatedMeal)
   }
 
   return (
@@ -125,8 +125,7 @@ export function EditRecipeForm({ recipe, onSuccess }: EditRecipeFormProps) {
         />
       </div>
 
-      <Button type="submit">Update Recipe</Button>
+      <Button type="submit">Update Meal</Button>
     </form>
   )
 }
-

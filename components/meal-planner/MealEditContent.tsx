@@ -1,3 +1,5 @@
+"use client"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -6,26 +8,26 @@ import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { ImageIcon } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
-import type { CustomMealForm, Recipe } from "@/types"
+import type { CustomMealForm, Meal } from "@/types"
 import { AVAILABLE_TAGS } from "@/constants/meals"
 
 interface MealEditContentProps {
   onAddCustomMeal: () => void
-  onSelectRecipe: (recipe: Recipe) => void
+  onSelectMeal: (meal: Meal) => void
   customMealForm: CustomMealForm
   handleCustomMealFormChange: (field: keyof CustomMealForm, value: string | string[]) => void
   toggleTag: (tag: string) => void
-  recipes: Recipe[]
+  meals: Meal[]
   loading: boolean
 }
 
 export function MealEditContent({
   onAddCustomMeal,
-  onSelectRecipe,
+  onSelectMeal,
   customMealForm,
   handleCustomMealFormChange,
   toggleTag,
-  recipes,
+  meals,
   loading,
 }: MealEditContentProps) {
   if (loading) {
@@ -40,7 +42,7 @@ export function MealEditContent({
     <Tabs defaultValue="custom" className="w-full">
       <TabsList className="grid w-full grid-cols-2">
         <TabsTrigger value="custom">Custom Meal</TabsTrigger>
-        <TabsTrigger value="recipe">From Recipes</TabsTrigger>
+        <TabsTrigger value="meal">From My Meals</TabsTrigger>
       </TabsList>
       <TabsContent value="custom" className="space-y-4">
         <div className="space-y-2">
@@ -92,12 +94,12 @@ export function MealEditContent({
           Add Custom Meal
         </Button>
       </TabsContent>
-      <TabsContent value="recipe">
+      <TabsContent value="meal">
         <div className="space-y-4">
-          {recipes?.map((recipe) => (
-            <Card key={recipe.id} className="cursor-pointer hover:bg-accent" onClick={() => onSelectRecipe(recipe)}>
+          {meals?.map((meal) => (
+            <Card key={meal.id} className="cursor-pointer hover:bg-accent" onClick={() => onSelectMeal(meal)}>
               <CardHeader>
-                <CardTitle className="text-sm">{recipe.title}</CardTitle>
+                <CardTitle className="text-sm">{meal.title}</CardTitle>
               </CardHeader>
             </Card>
           ))}

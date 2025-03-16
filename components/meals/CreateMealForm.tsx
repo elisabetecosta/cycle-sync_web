@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -11,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext"
 import { AVAILABLE_TAGS } from "@/constants/meals"
 import type { Tag } from "@/types"
 
-export function CreateRecipeForm() {
+export function CreateMealForm() {
   const router = useRouter()
   const { user } = useAuth()
   const { toast } = useToast()
@@ -39,12 +41,12 @@ export function CreateRecipeForm() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "You must be logged in to create a recipe",
+        description: "You must be logged in to create a meal",
       })
       return
     }
 
-    const recipeData = {
+    const mealData = {
       user_id: user.id,
       title,
       image,
@@ -53,18 +55,18 @@ export function CreateRecipeForm() {
       preparation,
     }
 
-    const { data, error } = await supabase.from("recipes").insert([recipeData])
+    const { data, error } = await supabase.from("meals").insert([mealData])
 
     if (error) {
-      console.error("Error creating recipe:", error)
+      console.error("Error creating meal:", error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create recipe",
+        description: "Failed to create meal",
       })
     } else {
-      toast({ title: "Success", description: "Recipe created successfully!" })
-      router.push("/recipes")
+      toast({ title: "Success", description: "Meal created successfully!" })
+      router.push("/meals")
     }
   }
 
@@ -135,8 +137,7 @@ export function CreateRecipeForm() {
         />
       </div>
 
-      <Button type="submit">Create Recipe</Button>
+      <Button type="submit">Create Meal</Button>
     </form>
   )
 }
-

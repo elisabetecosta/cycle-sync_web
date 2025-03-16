@@ -14,7 +14,7 @@ export function Navbar() {
     const navItems = [
         { href: '/meal-planner', icon: UtensilsCrossed, label: 'Meal Planner' },
         { href: '/', icon: CalendarIcon, label: 'Cycle Calendar' },
-        { href: '/recipes', icon: BookOpen, label: 'Recipes' },
+        { href: '/meals', icon: BookOpen, label: 'Meals' },
     ];
 
     const handleLogout = async () => {

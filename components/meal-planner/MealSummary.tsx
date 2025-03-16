@@ -1,23 +1,23 @@
 import { Button } from "@/components/ui/button"
 import { ArrowRight, RefreshCw, Trash } from "lucide-react"
-import type { Meal } from "@/types"
+import type { MealPlan } from "@/types"
 
 interface MealSummaryProps {
-  meal: Meal
-  onGoToRecipe: () => void
+  mealPlan: MealPlan
+  onGoToMeal: () => void
   onChangeMeal: () => void
   onRemoveMeal: () => void
 }
 
-export function MealSummary({ meal, onGoToRecipe, onChangeMeal, onRemoveMeal }: MealSummaryProps) {
+export function MealSummary({ mealPlan, onGoToMeal, onChangeMeal, onRemoveMeal, setIsDialogOpen }: MealSummaryProps) {
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">{meal.content}</h3>
+      <h3 className="text-lg font-semibold">{mealPlan.content}</h3>
       <div className="flex space-x-2">
-        {meal.recipe_id && (
-          <Button onClick={onGoToRecipe}>
+      {mealPlan.meal_id && (
+          <Button onClick={onGoToMeal}>
             <ArrowRight className="mr-2 h-4 w-4" />
-            Go to Recipe
+            Go to Meal
           </Button>
         )}
         <Button onClick={onChangeMeal}>

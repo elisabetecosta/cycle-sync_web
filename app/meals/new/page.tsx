@@ -1,20 +1,19 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CreateRecipeForm } from "@/components/recipes/CreateRecipeForm"
+import { CreateMealForm } from "@/components/meals/CreateMealForm"
 
-export default function NewRecipe() {
+export default function NewMeal() {
   return (
     <div className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>Create New Recipe</CardTitle>
+          <CardTitle>Create New Meal</CardTitle>
         </CardHeader>
         <CardContent>
-          <CreateRecipeForm />
+          <CreateMealForm />
         </CardContent>
       </Card>
     </div>
   )
 }
-

@@ -1,3 +1,5 @@
+"use client"
+
 // External Libraries
 import { format, addDays } from "date-fns"
 import { Plus } from "lucide-react"
@@ -20,6 +22,9 @@ import { MealSummary } from "./MealSummary"
 import { useCycleTracker } from "@/hooks/useCycleTracker"
 import { useMealPlanner } from "@/hooks/useMealPlanner"
 
+// Types/Interfaces
+// (none in this file)
+
 // Assets and Constants
 import { CYCLE_PHASES } from "@/constants/cyclePhases"
 import { DAYS_OF_WEEK, MEAL_TYPES } from "@/constants/meals"
@@ -30,7 +35,11 @@ const MemoizedDialog = React.memo(
     isOpen,
     onOpenChange,
     children,
-  }: { isOpen: boolean; onOpenChange: (open: boolean) => void; children: React.ReactNode }) => (
+  }: {
+    isOpen: boolean
+    onOpenChange: (open: boolean) => void
+    children: React.ReactNode
+  }) => (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       {children}
     </Dialog>
@@ -47,20 +56,20 @@ export function MealPlanner() {
     customMealForm,
     dialogMode,
     setDialogMode,
-    selectedMeal,
-    recipes,
+    selectedMealPlan,
     meals,
-    mealsLoading,
+    mealPlans,
+    mealPlansLoading,
     handleAddCustomMeal,
-    handleSelectRecipe,
-    handleRemoveMeal,
+    handleSelectMeal,
+    handleRemoveMealPlan,
     handleCustomMealFormChange,
     toggleTag,
-    getMealForCell,
-    handleGoToRecipe,
+    getMealPlanForCell,
+    handleGoToMeal,
     isDialogOpen,
     setIsDialogOpen,
-    handleChangeMeal,
+    handleChangeMealPlan,
   } = useMealPlanner()
 
   // Function to determine the color of a cell based on the cycle phase
@@ -110,11 +119,13 @@ export function MealPlanner() {
               {/* Meal cells for each day */}
               {DAYS_OF_WEEK.map((day, index) => {
                 const date = format(weekDates[index], "yyyy-MM-dd")
-                const meal = getMealForCell(meals, type, date)
+                const mealPlan = getMealPlanForCell(mealPlans, type, date)
                 return (
                   <div
                     key={`${type}-${date}`}
-                    className={`aspect-[4/3] border rounded-md p-2 flex items-center justify-center relative group ${getPhaseColor(weekDates[index])}`}
+                    className={`aspect-[4/3] border rounded-md p-2 flex items-center justify-center relative group ${getPhaseColor(
+                      weekDates[index],
+                    )}`}
                   >
                     {/* Meal dialog */}
                     <MemoizedDialog
@@ -137,7 +148,7 @@ export function MealPlanner() {
                           }}
                         >
                           <span className="text-sm text-center break-words overflow-hidden line-clamp-2">
-                            {meal ? meal.content : <Plus className="h-4 w-4" />}
+                            {mealPlan ? mealPlan.content : <Plus className="h-4 w-4" />}
                           </span>
                         </Button>
                       </DialogTrigger>
@@ -145,37 +156,37 @@ export function MealPlanner() {
                       <DialogContent aria-describedby="meal-dialog-description">
                         <DialogHeader>
                           <DialogTitle>
-                            {selectedMeal
+                            {selectedMealPlan
                               ? dialogMode === "view"
                                 ? "Meal Details"
                                 : "Change Meal"
                               : `Add meal for ${format(new Date(date), "EEEE")} - ${label}`}
                           </DialogTitle>
                           <DialogDescription id="meal-dialog-description">
-                            {selectedMeal
+                            {selectedMealPlan
                               ? dialogMode === "view"
                                 ? "View or edit the details of this meal."
                                 : "Make changes to this meal."
                               : "Add a new meal to your plan."}
                           </DialogDescription>
                         </DialogHeader>
-                        {selectedMeal && dialogMode === "view" ? (
+                        {selectedMealPlan && dialogMode === "view" ? (
                           <MealSummary
-                            meal={selectedMeal}
-                            onGoToRecipe={() => handleGoToRecipe(selectedMeal.recipe_id!)}
-                            onChangeMeal={handleChangeMeal}
-                            onRemoveMeal={() => handleRemoveMeal(selectedMeal.id!)}
+                            mealPlan={selectedMealPlan}
+                            onGoToMeal={() => handleGoToMeal(selectedMealPlan.meal_id!)}
+                            onChangeMeal={handleChangeMealPlan}
+                            onRemoveMeal={() => handleRemoveMealPlan(selectedMealPlan.id!)}
                             setIsDialogOpen={setIsDialogOpen}
                           />
                         ) : (
                           <MealEditContent
                             onAddCustomMeal={handleAddCustomMeal}
-                            onSelectRecipe={handleSelectRecipe}
+                            onSelectMeal={handleSelectMeal}
                             customMealForm={customMealForm}
                             handleCustomMealFormChange={handleCustomMealFormChange}
                             toggleTag={toggleTag}
-                            recipes={recipes}
-                            loading={mealsLoading}
+                            meals={meals}
+                            loading={mealPlansLoading}
                           />
                         )}
                       </DialogContent>
@@ -188,7 +199,7 @@ export function MealPlanner() {
         </div>
       </div>
       {/* Loading overlay */}
-      {mealsLoading && (
+      {mealPlansLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-white"></div>
         </div>
