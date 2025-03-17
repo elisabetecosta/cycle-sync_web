@@ -39,6 +39,15 @@ export interface MealPlan {
     user_id: string
 }
 
+export interface NutritionalInfo {
+    calories: number
+    carbs: number
+    protein: number
+    fat: number
+    servingSize: string
+    totalServings: string
+}
+
 export interface Meal {
     id: string
     title: string
@@ -47,6 +56,7 @@ export interface Meal {
     preparation: string
     image?: string
     user_id: string
+    nutritional_info?: NutritionalInfo
 }
 
 export interface CustomMealForm {
@@ -55,6 +65,7 @@ export interface CustomMealForm {
     ingredients: string
     preparation: string
     image?: string
+    nutritional_info?: NutritionalInfo
 }
 
 export type Tag = "vegan" | "vegetarian" | "carnivore" | "gluten-free" | "dairy-free" | "keto" | "paleo"  

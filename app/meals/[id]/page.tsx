@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
@@ -11,6 +10,7 @@ import { EditMealForm } from "@/components/meals/EditMealForm"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { MealDisplay } from "@/components/meals/MealDisplay"
+import { useState } from "react"
 
 const fetchMeal = async (id: string) => {
   const { data, error } = await supabase.from("meals").select("*").eq("id", id).single()
@@ -53,13 +53,32 @@ export default function MealDetails() {
     }
   }
 
-  if (isLoading) return <div>Loading...</div>
-  if (!meal) return <div>Meal not found</div>
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-4 flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    )
+  }
+
+  if (!meal) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="text-center py-10">
+          <h2 className="text-2xl font-bold">Meal not found</h2>
+          <p className="mt-2">The meal you're looking for doesn't exist or has been removed.</p>
+          <Button asChild className="mt-4">
+            <Link href="/meals">Back to Meals</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 pb-20">
       <div className="mb-6">
-        <Button variant="ghost" asChild>
+        <Button variant="ghost" asChild className="mb-4">
           <Link href="/meals" className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
             Back to Meals
@@ -70,7 +89,7 @@ export default function MealDetails() {
       <MealDisplay meal={meal} onEdit={() => setIsEditDialogOpen(true)} onDelete={handleDelete} />
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Meal</DialogTitle>
           </DialogHeader>

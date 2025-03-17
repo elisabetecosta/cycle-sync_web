@@ -7,6 +7,7 @@ CREATE TABLE public.meals (
   tags TEXT[] NOT NULL,
   ingredients TEXT[] NOT NULL,
   preparation TEXT NOT NULL,
+  nutritional_info JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
 
