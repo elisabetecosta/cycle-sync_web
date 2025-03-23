@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
 import { AVAILABLE_TAGS } from "@/constants/meals"
+import { X, Scale, Apple } from "lucide-react"
 import type { NutritionalInfo, Tag } from "@/types"
 
 export function CreateMealForm() {
@@ -40,6 +41,10 @@ export function CreateMealForm() {
       setIngredients([...ingredients, currentIngredient.trim()])
       setCurrentIngredient("")
     }
+  }
+
+  const handleRemoveIngredient = (index: number) => {
+    setIngredients(ingredients.filter((_, i) => i !== index))
   }
 
   const toggleTag = (tag: Tag) => {
@@ -112,95 +117,109 @@ export function CreateMealForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="title">Name</Label>
-        <Input
-          id="title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Name of the meal"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="image">Image URL</Label>
-        <Input
-          id="image"
-          type="url"
-          value={image}
-          onChange={(e) => setImage(e.target.value)}
-          placeholder="https://..."
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Tags</Label>
-        <div className="flex flex-wrap gap-2">
-          {AVAILABLE_TAGS.map((tag) => (
-            <Badge
-              key={tag}
-              variant={selectedTags.includes(tag) ? "default" : "outline"}
-              className="cursor-pointer"
-              onClick={() => toggleTag(tag)}
-            >
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Ingredients</Label>
-        <div className="flex gap-2">
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="title">Name</Label>
           <Input
-            value={currentIngredient}
-            onChange={(e) => setCurrentIngredient(e.target.value)}
-            placeholder="Add ingredient..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault()
-                handleAddIngredient()
-              }
-            }}
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Name of the meal"
+            required
           />
-          <Button type="button" onClick={handleAddIngredient}>
-            Add
-          </Button>
         </div>
-        <ul className="list-disc list-inside space-y-1">
-          {ingredients.map((ingredient, index) => (
-            <li key={index} className="text-sm">
-              {ingredient}
-            </li>
-          ))}
-        </ul>
-      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="preparation">Preparation</Label>
-        <Textarea
-          id="preparation"
-          value={preparation}
-          onChange={(e) => setPreparation(e.target.value)}
-          placeholder="Enter each preparation step on a new line. Press Enter after each step. For example:
+        <div className="space-y-2">
+          <Label htmlFor="image">Image URL</Label>
+          <Input
+            id="image"
+            type="url"
+            value={image}
+            onChange={(e) => setImage(e.target.value)}
+            placeholder="https://..."
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Tags</Label>
+          <div className="flex flex-wrap gap-2">
+            {AVAILABLE_TAGS.map((tag) => (
+              <Badge
+                key={tag}
+                variant={selectedTags.includes(tag) ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => toggleTag(tag)}
+              >
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Ingredients</Label>
+          <div className="flex gap-2">
+            <Input
+              value={currentIngredient}
+              onChange={(e) => setCurrentIngredient(e.target.value)}
+              placeholder="Add ingredient..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  handleAddIngredient()
+                }
+              }}
+            />
+            <Button type="button" onClick={handleAddIngredient}>
+              Add
+            </Button>
+          </div>
+          <div className="mt-3 space-y-2">
+            {ingredients.map((ingredient, index) => (
+              <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
+                <span className="text-sm">{ingredient}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveIngredient(index)}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="preparation">Preparation</Label>
+          <Textarea
+            id="preparation"
+            value={preparation}
+            onChange={(e) => setPreparation(e.target.value)}
+            placeholder="Enter each preparation step on a new line. Press Enter after each step. For example:
 Mix the eggs with sugar.
 Add flour and baking powder.
 Bake for 30 minutes at 180°C."
-          required
-          className="min-h-[200px]"
-        />
+            required
+            className="min-h-[200px]"
+          />
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <Label className="text-lg font-semibold">Nutritional Information</Label>
-        <p className="text-sm text-gray-500 -mt-2">All nutritional values are per serving</p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
+      {/* Portion Information Section */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center mb-4">
+          <Scale className="mr-3 h-5 w-5 text-gray-700" />
+          <h2 className="text-xl font-bold">Portion Information</h2>
+        </div>
+        <div className="border-t border-gray-200 mb-6"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
             <Label htmlFor="totalServings" className="text-sm">
-              Total Servings (e.g., "4", "6 cookies")
+              Total Servings (e.g., "10 cookies", "8 slices")
             </Label>
             <Input
               id="totalServings"
@@ -209,9 +228,9 @@ Bake for 30 minutes at 180°C."
               placeholder="e.g., 4, 6 cookies"
             />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="servingSize" className="text-sm">
-              Serving Size (e.g., "1 slice", "100g")
+              Serving Size (e.g., "1 cookie", "1 slice")
             </Label>
             <Input
               id="servingSize"
@@ -221,11 +240,20 @@ Bake for 30 minutes at 180°C."
             />
           </div>
         </div>
+      </div>
 
+      {/* Nutritional Information Section */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center mb-4">
+          <Apple className="mr-3 h-5 w-5 text-gray-700" />
+          <h2 className="text-xl font-bold">Nutritional Information</h2>
+        </div>
+        <div className="border-t border-gray-200 mb-6"></div>
+        <p className="text-sm text-gray-500 mb-4">All nutritional values are per serving</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="calories" className="text-sm">
-              Calories (per serving)
+              Calories
             </Label>
             <Input
               id="calories"
@@ -235,9 +263,9 @@ Bake for 30 minutes at 180°C."
               onChange={(e) => handleNutritionalInfoChange("calories", e.target.value)}
             />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="carbs" className="text-sm">
-              Carbs (g per serving)
+              Carbs (g)
             </Label>
             <Input
               id="carbs"
@@ -247,9 +275,9 @@ Bake for 30 minutes at 180°C."
               onChange={(e) => handleNutritionalInfoChange("carbs", e.target.value)}
             />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="protein" className="text-sm">
-              Protein (g per serving)
+              Protein (g)
             </Label>
             <Input
               id="protein"
@@ -259,9 +287,9 @@ Bake for 30 minutes at 180°C."
               onChange={(e) => handleNutritionalInfoChange("protein", e.target.value)}
             />
           </div>
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="fat" className="text-sm">
-              Fat (g per serving)
+              Fat (g)
             </Label>
             <Input
               id="fat"
@@ -274,7 +302,7 @@ Bake for 30 minutes at 180°C."
         </div>
       </div>
 
-      <Button type="submit" disabled={isSubmitting}>
+      <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "Creating..." : "Create Meal"}
       </Button>
     </form>

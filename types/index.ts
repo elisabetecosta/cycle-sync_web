@@ -68,4 +68,4 @@ export interface CustomMealForm {
     nutritional_info?: NutritionalInfo
 }
 
-export type Tag = "vegan" | "vegetarian" | "carnivore" | "gluten-free" | "dairy-free" | "keto" | "paleo"  
+export type Tag = "vegan" | "vegetarian" | "carnivore" | "gluten-free" | "dairy-free" | "keto" | "paleo"

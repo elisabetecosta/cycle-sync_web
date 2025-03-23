@@ -1,52 +1,36 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { EditMealForm } from "@/components/meals/EditMealForm"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { supabase } from "@/lib/supabase"
+import { useQuery } from "@tanstack/react-query"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-import { useToast } from "@/hooks/use-toast"
-import { MealDisplay } from "@/components/meals/MealDisplay"
+import { useParams, useRouter } from "next/navigation"
 
+// Function to fetch meal data
 const fetchMeal = async (id: string) => {
   const { data, error } = await supabase.from("meals").select("*").eq("id", id).single()
   if (error) throw error
   return data
 }
 
-export default function MealDetails() {
+export default function EditMealPage() {
   const params = useParams()
   const router = useRouter()
-  const queryClient = useQueryClient()
   const id = params.id as string
-  const { toast } = useToast()
 
+  // Fetch the meal data
   const { data: meal, isLoading } = useQuery({
     queryKey: ["meal", id],
     queryFn: () => fetchMeal(id),
     enabled: !!id,
   })
 
-  const deleteMealMutation = useMutation({
-    mutationFn: async (mealId: string) => {
-      const { error } = await supabase.from("meals").delete().eq("id", mealId)
-      if (error) throw error
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["meals"])
-      toast({ title: "Success", description: "Meal deleted successfully" })
-      router.push("/meals")
-    },
-    onError: (error) => {
-      toast({ variant: "destructive", title: "Error", description: `Error deleting meal: ${error.message}` })
-    },
-  })
-
-  const handleDelete = () => {
-    if (window.confirm("Are you sure you want to delete this meal?")) {
-      deleteMealMutation.mutate(id)
-    }
+  // Handle successful edit
+  const handleEditSuccess = () => {
+    router.push(`/meals/${id}`)
   }
 
   if (isLoading) {
@@ -75,14 +59,21 @@ export default function MealDetails() {
     <div className="container mx-auto p-4 pb-20">
       <div className="mb-6">
         <Button variant="ghost" asChild className="mb-4">
-          <Link href="/meals" className="flex items-center gap-2">
+          <Link href={`/meals/${id}`} className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
-            Back to Meals
+            Back to Meal
           </Link>
         </Button>
       </div>
 
-      <MealDisplay meal={meal} onEdit={() => router.push(`/meals/${id}/edit`)} onDelete={handleDelete} />
+      <Card>
+        <CardHeader>
+          <CardTitle>Edit Meal: {meal.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EditMealForm meal={meal} onSuccess={handleEditSuccess} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

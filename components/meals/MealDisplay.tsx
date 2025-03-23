@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash, Utensils, ChefHat, Scale, Apple } from "lucide-react"
 import type { Meal } from "@/types"
+import Link from "next/link"
 
 interface MealDisplayProps {
   meal: Meal
@@ -31,11 +32,13 @@ export function MealDisplay({ meal, onEdit, onDelete }: MealDisplayProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={onEdit}
-            className="flex items-center gap-1 bg-black text-white hover:bg-gray-800 border-black"
+            asChild
+            className="flex items-center gap-1 bg-black text-white hover:bg-gray-800 hover:text-white hover:no-underline border-black"
           >
-            <Edit className="h-4 w-4" />
-            Editar
+            <Link href={`/meals/${meal.id}/edit`}>
+              <Edit className="h-4 w-4" />
+              Editar
+            </Link>
           </Button>
           <Button variant="destructive" size="sm" onClick={onDelete} className="flex items-center gap-1">
             <Trash className="h-4 w-4" />
@@ -72,11 +75,11 @@ export function MealDisplay({ meal, onEdit, onDelete }: MealDisplayProps) {
         <div className="px-8 py-8">
           <div className="grid grid-cols-2 gap-6">
             <div className="bg-gray-50 p-6 rounded-md">
-              <p className="text-sm text-gray-600 text-center">Total portions</p>
+              <p className="text-sm text-gray-600 text-center">Total Servings</p>
               <p className="text-xl font-bold text-center mt-2">{nutritionalInfo.totalServings}</p>
             </div>
             <div className="bg-gray-50 p-6 rounded-md">
-              <p className="text-sm text-gray-600 text-center">Portion</p>
+              <p className="text-sm text-gray-600 text-center">Serving Size</p>
               <p className="text-xl font-bold text-center mt-2">{nutritionalInfo.servingSize}</p>
             </div>
           </div>
