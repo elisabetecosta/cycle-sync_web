@@ -57,11 +57,13 @@ export function MealDisplay({ meal, onEdit, onDelete }: MealDisplayProps) {
       </div>
 
       {/* Main image */}
-      {meal.image && (
-        <div className="w-full overflow-hidden rounded-lg mb-10 h-[400px]">
-          <img src={meal.image || "/placeholder.svg"} alt={meal.title} className="w-full h-full object-cover" />
-        </div>
-      )}
+      <div className="w-full overflow-hidden rounded-lg mb-10 h-[400px]">
+        <img
+          src={meal.image || "https://theme-assets.getbento.com/sensei/b1ceca2.sensei/assets/images/catering-item-placeholder-704x520.png?height=400&width=800"}
+          alt={meal.title}
+          className="w-full h-full object-cover"
+        />
+      </div>
 
       {/* Portion Information */}
       <div className="bg-white rounded-lg shadow-lg mb-8 border border-gray-100">

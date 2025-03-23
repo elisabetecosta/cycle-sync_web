@@ -2,9 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { CalendarIcon, UtensilsCrossed, LogOut, BookOpen } from 'lucide-react';
+import { CalendarIcon, UtensilsCrossed, LogOut, ChefHat } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
 
 export function Navbar() {
     const pathname = usePathname();
@@ -14,7 +13,7 @@ export function Navbar() {
     const navItems = [
         { href: '/meal-planner', icon: UtensilsCrossed, label: 'Meal Planner' },
         { href: '/', icon: CalendarIcon, label: 'Cycle Calendar' },
-        { href: '/meals', icon: BookOpen, label: 'Meals' },
+        { href: '/meals', icon: ChefHat, label: 'Meals' },
     ];
 
     const handleLogout = async () => {
@@ -40,14 +39,14 @@ export function Navbar() {
                     <span className="text-xs mt-1">{item.label}</span>
                 </Link>
             ))}
-            <Button
-                variant="ghost"
-                className="flex flex-col items-center justify-center h-full w-full text-white hover:bg-transparent hover:text-white"
+            <Link
+                href=''
                 onClick={handleLogout}
+                className={"flex flex-col items-center justify-center h-full w-full"}
             >
                 <LogOut className="w-6 h-6" />
                 <span className="text-xs mt-1">Logout</span>
-            </Button>
+            </Link>
         </nav>
     );
 }
