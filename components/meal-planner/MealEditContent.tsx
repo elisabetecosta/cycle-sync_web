@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
-import { Scale, Apple, X } from "lucide-react"
+import { Scale, Apple, X, Search, Filter } from "lucide-react"
 import { Spinner } from "@/components/ui/spinner"
 import { Label } from "@/components/ui/label"
 import { useQuery } from "@tanstack/react-query"
@@ -14,7 +14,7 @@ import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
 import type { CustomMealForm, Meal, NutritionalInfo } from "@/types"
 import { AVAILABLE_TAGS } from "@/constants/meals"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 
 interface MealEditContentProps {
   onAddCustomMeal: () => void
@@ -37,6 +37,9 @@ export function MealEditContent({
 }: MealEditContentProps) {
   const { user } = useAuth()
   const [currentIngredient, setCurrentIngredient] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedFilterTags, setSelectedFilterTags] = useState<string[]>([])
+  const [showFilters, setShowFilters] = useState(false)
 
   // Fetch user's meals
   const { data: myMeals, isLoading: myMealsLoading } = useQuery({
@@ -62,6 +65,30 @@ export function MealEditContent({
 
   // Filter out user's meals from all meals to avoid duplication
   const otherMeals = allMeals?.filter((meal) => meal.user_id !== user?.id) || []
+
+  // Toggle filter tag selection
+  const toggleFilterTag = (tag: string) => {
+    setSelectedFilterTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
+  }
+
+  // Filter meals based on search query and selected tags
+  const filterMeals = (meals: Meal[] | undefined) => {
+    if (!meals) return []
+
+    return meals.filter((meal) => {
+      // Filter by search query
+      const matchesSearch = searchQuery === "" || meal.title.toLowerCase().includes(searchQuery.toLowerCase())
+
+      // Filter by tags
+      const matchesTags = selectedFilterTags.length === 0 || selectedFilterTags.every((tag) => meal.tags.includes(tag))
+
+      return matchesSearch && matchesTags
+    })
+  }
+
+  // Apply filters to meals
+  const filteredMyMeals = useMemo(() => filterMeals(myMeals), [myMeals, searchQuery, selectedFilterTags])
+  const filteredOtherMeals = useMemo(() => filterMeals(otherMeals), [otherMeals, searchQuery, selectedFilterTags])
 
   // Handle nutritional info changes
   const handleNutritionalInfoChange = (field: keyof NutritionalInfo, value: string) => {
@@ -325,15 +352,72 @@ Bake for 30 minutes at 180°C."
         </Button>
       </TabsContent>
       <TabsContent value="meal">
-        <div className="space-y-6">
+        <div className="space-y-4">
+          {/* Search and Filter UI */}
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <div className="relative flex-grow">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  type="text"
+                  placeholder="Search meals..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className={showFilters ? "bg-gray-100" : ""}
+                size="sm"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+                {selectedFilterTags.length > 0 && (
+                  <span className="ml-2 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                    {selectedFilterTags.length}
+                  </span>
+                )}
+              </Button>
+            </div>
+
+            {showFilters && (
+              <div className="p-3 border rounded-md bg-gray-50">
+                <h3 className="font-medium mb-2 text-sm">Filter by tags:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_TAGS.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant={selectedFilterTags.includes(tag) ? "default" : "outline"}
+                      className="cursor-pointer text-xs"
+                      onClick={() => toggleFilterTag(tag)}
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+                {selectedFilterTags.length > 0 && (
+                  <Button variant="link" onClick={() => setSelectedFilterTags([])} className="mt-2 p-0 h-auto text-xs">
+                    Clear all filters
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* My Meals Section */}
           <div>
             <h3 className="text-lg font-semibold mb-3">My Meals</h3>
             {myMeals?.length === 0 ? (
               <p className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">You haven't created any meals yet.</p>
+            ) : filteredMyMeals.length === 0 ? (
+              <p className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
+                No meals match your search criteria.
+              </p>
             ) : (
               <div className="space-y-2">
-                {myMeals?.map((meal) => (
+                {filteredMyMeals.map((meal) => (
                   <Card
                     key={meal.id}
                     className="cursor-pointer hover:bg-accent transition-colors"
@@ -377,9 +461,13 @@ Bake for 30 minutes at 180°C."
             <h3 className="text-lg font-semibold mb-3">Community Meals</h3>
             {otherMeals.length === 0 ? (
               <p className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">No other meals available.</p>
+            ) : filteredOtherMeals.length === 0 ? (
+              <p className="text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
+                No meals match your search criteria.
+              </p>
             ) : (
               <div className="space-y-2">
-                {otherMeals.map((meal) => (
+                {filteredOtherMeals.map((meal) => (
                   <Card
                     key={meal.id}
                     className="cursor-pointer hover:bg-accent transition-colors"

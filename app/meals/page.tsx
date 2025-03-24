@@ -3,11 +3,14 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, Search, Filter } from "lucide-react"
 import Link from "next/link"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/contexts/AuthContext"
+import { Input } from "@/components/ui/input"
+import { useState, useMemo } from "react"
+import { AVAILABLE_TAGS } from "@/constants/meals"
 
 interface Meal {
   id: string
@@ -41,6 +44,10 @@ const fetchAllMeals = async (): Promise<Meal[]> => {
 
 export default function Meals() {
   const { user } = useAuth()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [showFilters, setShowFilters] = useState(false)
+
   const { data: myMeals, isLoading: myMealsLoading } = useQuery({
     queryKey: ["myMeals", user?.id],
     queryFn: () => fetchMyMeals(user!.id),
@@ -52,6 +59,30 @@ export default function Meals() {
     queryFn: fetchAllMeals,
     enabled: !!user,
   })
+
+  // Toggle tag selection
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
+  }
+
+  // Filter meals based on search query and selected tags
+  const filterMeals = (meals: Meal[] | undefined) => {
+    if (!meals) return []
+
+    return meals.filter((meal) => {
+      // Filter by search query
+      const matchesSearch = searchQuery === "" || meal.title.toLowerCase().includes(searchQuery.toLowerCase())
+
+      // Filter by tags
+      const matchesTags = selectedTags.length === 0 || selectedTags.every((tag) => meal.tags.includes(tag))
+
+      return matchesSearch && matchesTags
+    })
+  }
+
+  // Apply filters to meals
+  const filteredMyMeals = useMemo(() => filterMeals(myMeals), [myMeals, searchQuery, selectedTags])
+  const filteredAllMeals = useMemo(() => filterMeals(allMeals), [allMeals, searchQuery, selectedTags])
 
   if (myMealsLoading || allMealsLoading) return <div>Loading...</div>
 
@@ -67,6 +98,58 @@ export default function Meals() {
         </Button>
       </div>
 
+      {/* Search and Filter UI */}
+      <div className="mb-6 space-y-4">
+        <div className="flex gap-2">
+          <div className="relative flex-grow">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            <Input
+              type="text"
+              placeholder="Search meals..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className={showFilters ? "bg-gray-100" : ""}
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+            {selectedTags.length > 0 && (
+              <span className="ml-2 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                {selectedTags.length}
+              </span>
+            )}
+          </Button>
+        </div>
+
+        {showFilters && (
+          <div className="p-4 border rounded-md bg-gray-50">
+            <h3 className="font-medium mb-2">Filter by tags:</h3>
+            <div className="flex flex-wrap gap-2">
+              {AVAILABLE_TAGS.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant={selectedTags.includes(tag) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+            {selectedTags.length > 0 && (
+              <Button variant="link" onClick={() => setSelectedTags([])} className="mt-2 p-0 h-auto text-sm">
+                Clear all filters
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+
       <h2 className="text-2xl font-semibold mb-4">My Meals</h2>
       {myMeals?.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg mb-8">
@@ -75,9 +158,24 @@ export default function Meals() {
             <Link href="/meals/new">Create Your First Meal</Link>
           </Button>
         </div>
+      ) : filteredMyMeals.length === 0 ? (
+        <div className="text-center py-8 bg-gray-50 rounded-lg mb-8">
+          <p className="text-gray-500">No meals match your search criteria.</p>
+          {(searchQuery || selectedTags.length > 0) && (
+            <Button
+              variant="link"
+              onClick={() => {
+                setSearchQuery("")
+                setSelectedTags([])
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {myMeals?.map((meal) => (
+          {filteredMyMeals.map((meal) => (
             <Link key={meal.id} href={`/meals/${meal.id}`}>
               <Card className="h-full hover:shadow-lg transition-shadow">
                 <div className="aspect-video w-full overflow-hidden rounded-t-lg">
@@ -108,9 +206,24 @@ export default function Meals() {
         <div className="text-center py-8 bg-gray-50 rounded-lg">
           <p className="text-gray-500">No meals available in the system.</p>
         </div>
+      ) : filteredAllMeals.length === 0 ? (
+        <div className="text-center py-8 bg-gray-50 rounded-lg">
+          <p className="text-gray-500">No meals match your search criteria.</p>
+          {(searchQuery || selectedTags.length > 0) && (
+            <Button
+              variant="link"
+              onClick={() => {
+                setSearchQuery("")
+                setSelectedTags([])
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {allMeals?.map((meal) => (
+          {filteredAllMeals.map((meal) => (
             <Link key={meal.id} href={`/meals/${meal.id}`}>
               <Card className="h-full hover:shadow-lg transition-shadow">
                 <div className="aspect-video w-full overflow-hidden rounded-t-lg">
