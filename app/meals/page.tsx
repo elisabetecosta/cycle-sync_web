@@ -180,7 +180,7 @@ export default function Meals() {
               <Card className="h-full hover:shadow-lg transition-shadow">
                 <div className="aspect-video w-full overflow-hidden rounded-t-lg">
                   <img
-                    src={meal.image || "https://theme-assets.getbento.com/sensei/b1ceca2.sensei/assets/images/catering-item-placeholder-704x520.png?height=200&width=400"}
+                    src={meal.image || "/images/meal-placeholder.png?height=200&width=400"}
                     alt={meal.title}
                     className="w-full h-full object-cover"
                   />
@@ -228,7 +228,7 @@ export default function Meals() {
               <Card className="h-full hover:shadow-lg transition-shadow">
                 <div className="aspect-video w-full overflow-hidden rounded-t-lg">
                   <img
-                    src={meal.image || "https://theme-assets.getbento.com/sensei/b1ceca2.sensei/assets/images/catering-item-placeholder-704x520.png?height=200&width=400"}
+                    src={meal.image || "/images/meal-placeholder.png?height=200&width=400"}
                     alt={meal.title}
                     className="w-full h-full object-cover"
                   />
