@@ -8,19 +8,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 // Next.js Components
 import { useRouter } from "next/navigation"
 
-// Custom Components
-// (none in this file)
-
 // Utilities and Hooks
 import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
 
 // Types/Interfaces
-import type { CustomMealForm, Meal, MealPlan, MealType } from "@/types"
-
-// Assets and Constants
-// (none in this file)
+import type { CustomMealForm, Meal, MealPlan, MealType, NutritionalInfo } from "@/types"
 
 export const useMealPlanner = () => {
   const { user } = useAuth()
@@ -35,6 +29,14 @@ export const useMealPlanner = () => {
     ingredients: "",
     preparation: "",
     image: "",
+    nutritional_info: {
+      calories: 0,
+      carbs: 0,
+      protein: 0,
+      fat: 0,
+      servingSize: "1 serving",
+      totalServings: "1",
+    },
   })
   const [dialogMode, setDialogMode] = useState<"view" | "edit">("view")
   const [selectedMealPlan, setSelectedMealPlan] = useState<MealPlan | null>(null)
@@ -164,13 +166,20 @@ export const useMealPlanner = () => {
       user
     ) {
       try {
+        // Convert ingredients from string to array
+        const ingredientsArray = customMealForm.ingredients
+          .split("\n")
+          .map((ingredient) => ingredient.trim())
+          .filter((ingredient) => ingredient !== "")
+
         const newMeal: Omit<Meal, "id"> = {
           title: customMealForm.title.trim(),
           tags: customMealForm.tags,
-          ingredients: customMealForm.ingredients.split("\n").map((ingredient) => ingredient.trim()),
+          ingredients: ingredientsArray,
           preparation: customMealForm.preparation.trim(),
           image: customMealForm.image,
           user_id: user.id,
+          nutritional_info: customMealForm.nutritional_info,
         }
 
         const { data: mealData, error: mealError } = await supabase.from("meals").insert([newMeal]).select()
@@ -198,6 +207,14 @@ export const useMealPlanner = () => {
           ingredients: "",
           preparation: "",
           image: "",
+          nutritional_info: {
+            calories: 0,
+            carbs: 0,
+            protein: 0,
+            fat: 0,
+            servingSize: "1 serving",
+            totalServings: "1",
+          },
         })
         setIsDialogOpen(false)
       } catch (error) {
@@ -240,7 +257,7 @@ export const useMealPlanner = () => {
   )
 
   // Handle changes to the custom meal form
-  const handleCustomMealFormChange = (field: keyof CustomMealForm, value: string | string[]) => {
+  const handleCustomMealFormChange = (field: keyof CustomMealForm, value: string | string[] | NutritionalInfo) => {
     setCustomMealForm((prev) => ({ ...prev, [field]: value }))
   }
 

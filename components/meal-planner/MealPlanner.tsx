@@ -153,7 +153,10 @@ export function MealPlanner() {
                         </Button>
                       </DialogTrigger>
                       {/* Dialog content */}
-                      <DialogContent aria-describedby="meal-dialog-description">
+                      <DialogContent
+                        className="max-h-[90vh] overflow-y-auto"
+                        aria-describedby="meal-dialog-description"
+                      >
                         <DialogHeader>
                           <DialogTitle>
                             {selectedMealPlan
