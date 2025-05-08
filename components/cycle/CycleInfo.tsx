@@ -1,20 +1,23 @@
-import { InfoIcon, Utensils, Dumbbell, Brain, Weight, Clock, Frown, Battery, ThermometerIcon } from "lucide-react"
+"use client"
+
+import { InfoIcon, Utensils, Dumbbell, Brain, Weight, Clock } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Badge } from "../ui/badge"
 import type { CyclePhase, Period, PredictedPeriod } from "../../types"
 import { CYCLE_PHASES, PREDICTED_PERIOD } from "../../constants/cyclePhases"
 import { isWithinInterval, isSameDay } from "date-fns"
 import { shouldAutoMarkPeriod, getEffectiveEndDate } from "@/utils/cycleCalculations"
+import { SymptomImage } from "./SymptomImage"
 
 interface CycleInfoProps {
   cyclePhases: CyclePhase[]
-  predictedPeriod: Period | null
+  predictedPeriods: Period[]
   selectedDate: Date
   periods: Period[]
   className?: string
 }
 
-export function CycleInfo({ cyclePhases, predictedPeriod, selectedDate, periods, className }: CycleInfoProps) {
+export function CycleInfo({ cyclePhases, predictedPeriods, selectedDate, periods, className }: CycleInfoProps) {
   const getActivePhase = (): CyclePhase | PredictedPeriod | null => {
     // Check if the selected date is within a marked period (menstruation)
     const activePeriod = periods.find((period) => {
@@ -46,9 +49,15 @@ export function CycleInfo({ cyclePhases, predictedPeriod, selectedDate, periods,
       }
     }
 
-    // Check for predicted period
-    if (predictedPeriod && isWithinInterval(selectedDate, { start: predictedPeriod.start, end: predictedPeriod.end })) {
-      return PREDICTED_PERIOD
+    // Check for predicted periods
+    for (const predictedPeriod of predictedPeriods) {
+      if (
+        predictedPeriod.start &&
+        predictedPeriod.end &&
+        isWithinInterval(selectedDate, { start: predictedPeriod.start, end: predictedPeriod.end })
+      ) {
+        return PREDICTED_PERIOD
+      }
     }
 
     return null
@@ -56,15 +65,23 @@ export function CycleInfo({ cyclePhases, predictedPeriod, selectedDate, periods,
 
   const activePhase = getActivePhase()
 
+  // Function to format tip category names
+  const formatTipCategory = (category: string): string => {
+    return category
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  }
+
   const getIconForTip = (tipType: string) => {
     switch (tipType) {
       case "diet":
         return <Utensils className="flex-shrink-0" size={30} />
       case "exercise":
         return <Dumbbell className="flex-shrink-0" size={30} />
-      case "mentalHealth":
+      case "mental health":
         return <Brain className="flex-shrink-0" size={30} />
-      case "weightLoss":
+      case "weight loss":
         return <Weight className="flex-shrink-0" size={30} />
       case "fasting":
         return <Clock className="flex-shrink-0" size={30} />
@@ -88,24 +105,16 @@ export function CycleInfo({ cyclePhases, predictedPeriod, selectedDate, periods,
             <p className="text-lg">{activePhase.description}</p>
 
             {activePhase.symptoms && (
-              <div className="bg-gray-100 rounded-lg p-4">
-                <h3 className="font-semibold text-lg mb-4">Common Symptoms:</h3>
-                <div className="grid grid-cols-3 gap-4">
+              <div className="bg-gray-100 rounded-lg p-6">
+                <h3 className="font-semibold text-lg mb-6">Common Symptoms:</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                   {activePhase.symptoms.map((symptom, index) => (
                     <div key={index} className="flex flex-col items-center text-center">
-                      {(() => {
-                        switch (symptom.toLowerCase()) {
-                          case "cramping":
-                            return <Frown size={24} />
-                          case "fatigue":
-                            return <Battery size={24} />
-                          case "lower back pain":
-                            return <ThermometerIcon size={24} />
-                          default:
-                            return <InfoIcon size={24} />
-                        }
-                      })()}
-                      <span className="mt-2 text-sm">{symptom}</span>
+                      <SymptomImage
+                        symptom={symptom}
+                        className="w-24 h-24 transform transition-transform hover:scale-105 duration-300"
+                      />
+                      <span className="mt-3 text-sm font-medium">{symptom.name}</span>
                     </div>
                   ))}
                 </div>
@@ -120,7 +129,7 @@ export function CycleInfo({ cyclePhases, predictedPeriod, selectedDate, periods,
                     <div key={key} className="flex bg-gray-50 rounded-lg p-3">
                       <div className="flex items-center justify-center w-10 mr-3">{getIconForTip(key)}</div>
                       <div className="flex-1">
-                        <h4 className="font-medium capitalize">{key}:</h4>
+                        <h4 className="font-medium capitalize">{formatTipCategory(key)}:</h4>
                         <ul className="list-disc list-inside space-y-1 ml-4">
                           {tips.map((tip, index) => (
                             <li key={index} className="pl-1 text-sm">

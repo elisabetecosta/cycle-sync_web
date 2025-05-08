@@ -8,9 +8,14 @@ export interface Period {
 export interface CycleTips {
     diet: string[]
     exercise: string[]
-    mentalHealth: string[]
-    weightLoss: string[]
+    "mental health": string[]
+    "weight loss": string[]
     fasting: string[]
+}
+
+export interface Symptom {
+    name: string
+    imagePath: string
 }
 
 export interface CyclePhase {
@@ -18,7 +23,7 @@ export interface CyclePhase {
     start: Date
     end: Date
     description: string
-    symptoms: string[]
+    symptoms: Symptom[]
     color: string
     tips: CycleTips
 }
